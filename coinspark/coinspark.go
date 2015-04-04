@@ -124,7 +124,7 @@ type CoinSparkIOIndex int
 type CoinSparkAddressFlags int32
 
 type CoinSparkPaymentRef struct {
-	ref uint64
+	Ref uint64
 }
 
 type CoinSparkAddress struct {
@@ -547,7 +547,7 @@ func (p *CoinSparkAddress) Decode(sparkAddress string) bool {
 
 	for charIndex = 0; charIndex < paymentRefChars; charIndex++ {
 		charValue = int(stringBase58[2+addressFlagChars+charIndex])
-		p.PaymentRef.ref += uint64(charValue) * multiplier
+		p.PaymentRef.Ref += uint64(charValue) * multiplier
 		multiplier *= 58
 	}
 	//  Convert the bitcoin address
@@ -602,7 +602,7 @@ func (p *CoinSparkAddress) Encode() string {
 	//  Build up extra data for payment reference
 
 	paymentRefChars = 0
-	testPaymentRef = p.PaymentRef.ref
+	testPaymentRef = p.PaymentRef.Ref
 
 	for testPaymentRef > 0 {
 		stringBase58[2+addressFlagChars+paymentRefChars] = byte(testPaymentRef % 58)
@@ -700,7 +700,7 @@ func (p *CoinSparkAddress) String() string {
 	}
 	buffer.WriteString("\n")
 
-	buffer.WriteString(fmt.Sprintf("Payment reference: %d\n", p.PaymentRef.ref))
+	buffer.WriteString(fmt.Sprintf("Payment reference: %d\n", p.PaymentRef.Ref))
 	buffer.WriteString(fmt.Sprintf("END COINSPARK ADDRESS\n\n"))
 	return buffer.String()
 }
@@ -1917,25 +1917,25 @@ func LocateMetadataRange(metadata []byte, desiredPrefix byte) []byte {
 }
 
 func (p *CoinSparkPaymentRef) Clear() *CoinSparkPaymentRef {
-	p.ref = 0
+	p.Ref = 0
 	return p
 }
 
 func (p *CoinSparkPaymentRef) String() string {
 	buffer := bytes.Buffer{}
 	buffer.WriteString("COINSPARK PAYMENT REFERENCE\n")
-	buffer.WriteString(fmt.Sprintf("%d (small endian hex %s)\n", p.ref, UnsignedToSmallEndianHex(int64(p.ref), 8)))
+	buffer.WriteString(fmt.Sprintf("%d (small endian hex %s)\n", p.Ref, UnsignedToSmallEndianHex(int64(p.Ref), 8)))
 	buffer.WriteString("END COINSPARK PAYMENT REFERENCE\n\n")
 
 	return buffer.String()
 }
 
 func (p *CoinSparkPaymentRef) IsValid() bool {
-	return p.ref >= 0 && p.ref <= COINSPARK_PAYMENT_REF_MAX
+	return p.Ref >= 0 && p.Ref <= COINSPARK_PAYMENT_REF_MAX
 }
 
 func (p *CoinSparkPaymentRef) Match(other *CoinSparkPaymentRef) bool {
-	return p.ref == other.ref
+	return p.Ref == other.Ref
 }
 
 func (p *CoinSparkPaymentRef) Randomize() *CoinSparkPaymentRef {
@@ -1960,13 +1960,13 @@ func (p *CoinSparkPaymentRef) Encode(metadataMaxLen int) []byte {
 	// The payment reference
 
 	bytes := 0
-	paymentLeft := p.ref
+	paymentLeft := p.Ref
 	for paymentLeft > 0 {
 		bytes += 1
 		paymentLeft = uint64(math.Floor(float64(paymentLeft) / 256))
 	}
 
-	s := UnsignedToSmallEndianHex(int64(p.ref), bytes)
+	s := UnsignedToSmallEndianHex(int64(p.Ref), bytes)
 	hexBytes, _ := hex.DecodeString(s)
 	buf.Write(hexBytes)
 
@@ -1994,7 +1994,7 @@ func (p *CoinSparkPaymentRef) Decode(buffer []byte) bool {
 	}
 
 	_, v := ShiftLittleEndianBytesToInt(&metadata, finalMetadataLen)
-	p.ref = uint64(v)
+	p.Ref = uint64(v)
 
 	// Return validity
 	return p.IsValid()
