@@ -128,9 +128,9 @@ type CoinSparkPaymentRef struct {
 }
 
 type CoinSparkAddress struct {
-	bitcoinAddress string
-	addressFlags   CoinSparkAddressFlags
-	paymentRef     CoinSparkPaymentRef
+	BitcoinAddress string
+	AddressFlags   CoinSparkAddressFlags
+	PaymentRef     CoinSparkPaymentRef
 }
 
 type CoinSparkGenesis struct {
@@ -449,21 +449,21 @@ func Base58ToInteger(base58Character byte) int {
 
 // Set all fields in address to their default/zero values, which are not necessarily valid.
 func (p *CoinSparkAddress) Clear() {
-	p.bitcoinAddress = ""
-	p.addressFlags = 0
-	p.paymentRef = CoinSparkPaymentRef{0}
+	p.BitcoinAddress = ""
+	p.AddressFlags = 0
+	p.PaymentRef = CoinSparkPaymentRef{0}
 }
 
 // Returns true if all values in the address are in their permitted ranges, false otherwise.
 func (p *CoinSparkAddress) IsValid() bool {
-	if p.bitcoinAddress == "" {
+	if p.BitcoinAddress == "" {
 		return false
 	}
-	if (p.addressFlags & COINSPARK_ADDRESS_FLAG_MASK) != p.addressFlags {
+	if (p.AddressFlags & COINSPARK_ADDRESS_FLAG_MASK) != p.AddressFlags {
 		return false
 	}
 
-	return p.paymentRef.IsValid()
+	return p.PaymentRef.IsValid()
 }
 
 // Returns true if the two CoinSparkAddress structures are identical.
@@ -473,7 +473,7 @@ func (p *CoinSparkAddress) Match(other *CoinSparkAddress) bool {
 	//	s1 := a1[:bytes.Index(a1[:], []byte{0x00})]
 	//	s2 := a2[:bytes.Index(a2[:], []byte{0x00})]
 
-	return (p.bitcoinAddress == other.bitcoinAddress && p.addressFlags == other.addressFlags && p.paymentRef == other.paymentRef)
+	return (p.BitcoinAddress == other.BitcoinAddress && p.AddressFlags == other.AddressFlags && p.PaymentRef == other.PaymentRef)
 }
 
 // Decodes the CoinSpark address string into the fields in address.
@@ -531,23 +531,23 @@ func (p *CoinSparkAddress) Decode(sparkAddress string) bool {
 	bitcoinAddressLen = inputLen - 2 - extraDataChars
 	//  Read the extra data for address flags
 
-	p.addressFlags = 0
+	p.AddressFlags = 0
 	multiplier = 1
 
 	for charIndex = 0; charIndex < addressFlagChars; charIndex++ {
 		charValue = int(stringBase58[2+charIndex])
-		p.addressFlags += CoinSparkAddressFlags(uint64(charValue) * multiplier)
+		p.AddressFlags += CoinSparkAddressFlags(uint64(charValue) * multiplier)
 		multiplier *= 58
 	}
 
 	//  Read the extra data for payment reference
 
-	p.paymentRef = CoinSparkPaymentRef{0}
+	p.PaymentRef = CoinSparkPaymentRef{0}
 	multiplier = 1
 
 	for charIndex = 0; charIndex < paymentRefChars; charIndex++ {
 		charValue = int(stringBase58[2+addressFlagChars+charIndex])
-		p.paymentRef.ref += uint64(charValue) * multiplier
+		p.PaymentRef.ref += uint64(charValue) * multiplier
 		multiplier *= 58
 	}
 	//  Convert the bitcoin address
@@ -566,7 +566,7 @@ func (p *CoinSparkAddress) Decode(sparkAddress string) bool {
 
 	//p.bitcoinAddress[bitcoinAddressLen]=0 // C terminator byte
 
-	p.bitcoinAddress = bufBase58.String()
+	p.BitcoinAddress = bufBase58.String()
 
 	return p.IsValid()
 
@@ -574,9 +574,8 @@ cannotDecodeAddress:
 	return false
 }
 
-// Encodes the fields in address to a byte array
-// Returns the size of the byte array if successful, otherwise 0.
-func (p *CoinSparkAddress) Encode() []byte {
+// Encodes the fields in address to a string
+func (p *CoinSparkAddress) Encode() string {
 	var bitcoinAddressLen, stringLen, halfLength int
 	var charIndex, charValue, addressFlagChars, paymentRefChars, extraDataChars int
 	var testAddressFlags CoinSparkAddressFlags
@@ -592,7 +591,7 @@ func (p *CoinSparkAddress) Encode() []byte {
 	//  Build up extra data for address flags
 
 	addressFlagChars = 0
-	testAddressFlags = p.addressFlags
+	testAddressFlags = p.AddressFlags
 
 	for testAddressFlags > 0 {
 		stringBase58[2+addressFlagChars] = byte(testAddressFlags % 58)
@@ -603,7 +602,7 @@ func (p *CoinSparkAddress) Encode() []byte {
 	//  Build up extra data for payment reference
 
 	paymentRefChars = 0
-	testPaymentRef = p.paymentRef.ref
+	testPaymentRef = p.PaymentRef.ref
 
 	for testPaymentRef > 0 {
 		stringBase58[2+addressFlagChars+paymentRefChars] = byte(testPaymentRef % 58)
@@ -614,7 +613,7 @@ func (p *CoinSparkAddress) Encode() []byte {
 	//  Calculate/encode extra length and total length required
 
 	extraDataChars = addressFlagChars + paymentRefChars
-	bitcoinAddressLen = len(p.bitcoinAddress)
+	bitcoinAddressLen = len(p.BitcoinAddress)
 	stringLen = bitcoinAddressLen + 2 + extraDataChars
 
 	stringBase58[1] = byte(addressFlagChars*COINSPARK_ADDRESS_FLAG_CHARS_MULTIPLE + paymentRefChars)
@@ -622,10 +621,10 @@ func (p *CoinSparkAddress) Encode() []byte {
 	//  Convert the bitcoin address
 
 	for charIndex = 0; charIndex < bitcoinAddressLen; charIndex++ {
-		charValue = Base58ToInteger(p.bitcoinAddress[charIndex])
+		charValue = Base58ToInteger(p.BitcoinAddress[charIndex])
 		if charValue < 0 {
 			fmt.Println("invalid base58 char")
-			return nil //0 // invalid base58 character
+			return "" // invalid base58 character
 		}
 
 		charValue += COINSPARK_ADDRESS_CHAR_INCREMENT
@@ -653,10 +652,10 @@ func (p *CoinSparkAddress) Encode() []byte {
 	}
 	//    input[stringLen]=0
 
-	return buf.Bytes()
+	return string(buf.Bytes())
 
 cannotEncodeAddress:
-	return nil
+	return ""
 }
 
 // Internal use only
@@ -679,13 +678,13 @@ func (p *CoinSparkAddress) String() string {
 		{COINSPARK_ADDRESS_FLAG_FILE_MESSAGES, "file messages"},
 	}
 	buffer.WriteString("COINSPARK ADDRESS\n")
-	buffer.WriteString(fmt.Sprintf("  Bitcoin address: %s\n", p.bitcoinAddress))
-	buffer.WriteString(fmt.Sprintf("    Address flags: %d", p.addressFlags))
+	buffer.WriteString(fmt.Sprintf("  Bitcoin address: %s\n", p.BitcoinAddress))
+	buffer.WriteString(fmt.Sprintf("    Address flags: %d", p.AddressFlags))
 
 	flagOutput = false
 
 	for _, f := range flagsToString {
-		if p.addressFlags&f.flag > 0 {
+		if p.AddressFlags&f.flag > 0 {
 			if flagOutput {
 				buffer.WriteString(", ")
 			} else {
@@ -701,7 +700,7 @@ func (p *CoinSparkAddress) String() string {
 	}
 	buffer.WriteString("\n")
 
-	buffer.WriteString(fmt.Sprintf("Payment reference: %d\n", p.paymentRef.ref))
+	buffer.WriteString(fmt.Sprintf("Payment reference: %d\n", p.PaymentRef.ref))
 	buffer.WriteString(fmt.Sprintf("END COINSPARK ADDRESS\n\n"))
 	return buffer.String()
 }
@@ -709,9 +708,9 @@ func (p *CoinSparkAddress) String() string {
 // Convenience constructor
 func NewCoinSparkAddress(address string, flags CoinSparkAddressFlags, paymentRef CoinSparkPaymentRef) *CoinSparkAddress {
 	p := new(CoinSparkAddress)
-	p.bitcoinAddress = address
-	p.addressFlags = flags
-	p.paymentRef = paymentRef
+	p.BitcoinAddress = address
+	p.AddressFlags = flags
+	p.PaymentRef = paymentRef
 	return p
 }
 
