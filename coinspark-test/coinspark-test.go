@@ -22,7 +22,8 @@
 package main
 
 import (
-	coinspark "../coinspark"
+	coinspark "github.com/bitcartel/go-coinspark/coinspark"
+	//coinspark "../coinspark"
 	"bufio"
 	"bytes"
 	"encoding/hex"
@@ -238,12 +239,11 @@ func ProcessAddressTests(scanner *bufio.Scanner) {
 			os.Exit(1)
 		}
 
-		encodedBytes := address.Encode()
-		if encodedBytes == nil {
+		encoded := address.Encode()
+		if encoded == "" {
 			fmt.Println("Encode returned nil for " + inputLine)
 			os.Exit(1)
 		}
-		encoded := string(encodedBytes)
 
 		if encoded != inputLine {
 			fmt.Println("Encode address mismatch: " + encoded + " should be " + inputLine)
@@ -557,10 +557,10 @@ func ProcessScriptTests(scanner *bufio.Scanner) {
 				os.Exit(1)
 			}
 				
-			if genesis.CalcHashLen(len(metadata))!=genesis.GetHashLen() {
+			if genesis.CalcHashLen(len(metadata))!=genesis.AssetHashLen {
 				// assumes that metadata only contains genesis
 				fmt.Println("Failed to calculate matching hash length!")
-				fmt.Println("genesis.GetHashLen() = ", genesis.GetHashLen() )
+				fmt.Println("genesis.GetHashLen() = ", genesis.AssetHashLen )
 				fmt.Println("genesis.CalcHashLen(len(metadata)) = ", genesis.CalcHashLen(len(metadata)))
 				fmt.Println("len(metadata) = ", len(metadata))
 				os.Exit(1)
@@ -615,7 +615,7 @@ func ProcessScriptTests(scanner *bufio.Scanner) {
 
 			messageEncode:=message.Encode(countOutputs, len(metadata)) // encode on its own to check calcHashLen()
 			
-			if message.CalcHashLen(countOutputs, len(messageEncode))!=message.GetHashLen() {
+			if message.CalcHashLen(countOutputs, len(messageEncode))!=message.HashLen {
 				fmt.Println("Failed to calculate matching message hash length!")
 				os.Exit(1)
 			}
