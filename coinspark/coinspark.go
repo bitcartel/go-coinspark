@@ -134,50 +134,50 @@ type CoinSparkAddress struct {
 }
 
 type CoinSparkGenesis struct {
-	qtyMantissa        int16
-	qtyExponent        int16
-	chargeFlatMantissa int16
-	chargeFlatExponent int16
+	QtyMantissa        int16
+	QtyExponent        int16
+	ChargeFlatMantissa int16
+	ChargeBasisPoints  int16
 	chargeBasisPoints  int16 // one hundredths of a percent
-	useHttps           bool
-	domainName         string
-	usePrefix          bool   // prefix coinspark/ in asset web page URL path
-	pagePath           string // Max len should be COINSPARK_GENESIS_PAGE_PATH_MAX_LEN + 1
-	assetHash          []byte // Max len should be COINSPARK_GENESIS_HASH_MAX_LEN
-	assetHashLen       int    // number of bytes in assetHash that are valid for comparison
+	UseHttps           bool
+	DomainName         string
+	UsePrefix          bool   // prefix coinspark/ in asset web page URL path
+	PagePath           string // Max len should be COINSPARK_GENESIS_PAGE_PATH_MAX_LEN + 1
+	AssetHash          []byte // Max len should be COINSPARK_GENESIS_HASH_MAX_LEN
+	AssetHashLen       int    // number of bytes in assetHash that are valid for comparison
 }
 
 type CoinSparkAssetRef struct {
-	blockNum   int64                                    // block in which genesis transaction is confirmed
-	txOffset   int64                                    // byte offset within that block
-	txIDPrefix [COINSPARK_ASSETREF_TXID_PREFIX_LEN]byte // first bytes of genesis transaction id
+	BlockNum   int64                                    // block in which genesis transaction is confirmed
+	TxOffset   int64                                    // byte offset within that block
+	TxIDPrefix [COINSPARK_ASSETREF_TXID_PREFIX_LEN]byte // first bytes of genesis transaction id
 }
 
 type CoinSparkIORange struct {
-	first CoinSparkIOIndex
-	count CoinSparkIOIndex
+	First CoinSparkIOIndex
+	Count CoinSparkIOIndex
 }
 
 type CoinSparkTransfer struct {
-	assetRef     CoinSparkAssetRef
-	inputs       CoinSparkIORange
-	outputs      CoinSparkIORange
-	qtyPerOutput CoinSparkAssetQty
+	AssetRef     CoinSparkAssetRef
+	Inputs       CoinSparkIORange
+	Outputs      CoinSparkIORange
+	QtyPerOutput CoinSparkAssetQty
 }
 
 type CoinSparkTransferList struct {
-	transfers []CoinSparkTransfer
+	Transfers []CoinSparkTransfer
 }
 
 type CoinSparkMessage struct {
-	useHttps     bool
-	serverHost   string             // max len COINSPARK_MESSAGE_SERVER_HOST_MAX_LEN+1
-	usePrefix    bool               // prefix coinspark/ in server path
-	serverPath   string             // max len COINSPARK_MESSAGE_SERVER_PATH_MAX_LEN+1
-	isPublic     bool               // is the message publicly viewable
-	outputRanges []CoinSparkIORange // array of output ranges
-	hash         []byte
-	hashLen      int // number of bytes in hash that are valid for comparison/encoding
+	UseHttps     bool
+	ServerHost   string             // max len COINSPARK_MESSAGE_SERVER_HOST_MAX_LEN+1
+	UsePrefix    bool               // prefix coinspark/ in server path
+	ServerPath   string             // max len COINSPARK_MESSAGE_SERVER_PATH_MAX_LEN+1
+	IsPublic     bool               // is the message publicly viewable
+	OutputRanges []CoinSparkIORange // array of output ranges
+	Hash         []byte
+	HashLen      int // number of bytes in hash that are valid for comparison/encoding
 }
 
 type CoinSparkMessagePart struct {
@@ -716,10 +716,10 @@ func NewCoinSparkAddress(address string, flags CoinSparkAddressFlags, paymentRef
 
 // Set all fields in assetRef to their default/zero values, which are not necessarily valid.
 func (p *CoinSparkAssetRef) Clear() {
-	p.blockNum = 0
-	p.txOffset = 0
+	p.BlockNum = 0
+	p.TxOffset = 0
 	var x [COINSPARK_ASSETREF_TXID_PREFIX_LEN]byte
-	p.txIDPrefix = x
+	p.TxIDPrefix = x
 }
 
 func (p *CoinSparkAssetRef) StringInner(headers bool) string {
@@ -735,17 +735,17 @@ func (p *CoinSparkAssetRef) StringInner(headers bool) string {
 	}
 
 	var buf []byte = make([]byte, 4)
-	binary.LittleEndian.PutUint32(buf, uint32(p.blockNum))
+	binary.LittleEndian.PutUint32(buf, uint32(p.BlockNum))
 	s := hex.EncodeToString(buf[0:4])
 
-	buffer.WriteString(fmt.Sprintf("Genesis block index: %d (small endian hex %s)\n", p.blockNum, strings.ToUpper(s)))
+	buffer.WriteString(fmt.Sprintf("Genesis block index: %d (small endian hex %s)\n", p.BlockNum, strings.ToUpper(s)))
 
-	binary.LittleEndian.PutUint32(buf, uint32(p.txOffset))
+	binary.LittleEndian.PutUint32(buf, uint32(p.TxOffset))
 	s = hex.EncodeToString(buf[0:4])
 
-	buffer.WriteString(fmt.Sprintf(" Genesis txn offset: %d (small endian hex %s)\n", p.txOffset, strings.ToUpper(s)))
+	buffer.WriteString(fmt.Sprintf(" Genesis txn offset: %d (small endian hex %s)\n", p.TxOffset, strings.ToUpper(s)))
 
-	s = hex.EncodeToString(p.txIDPrefix[:])
+	s = hex.EncodeToString(p.TxIDPrefix[:])
 	buffer.WriteString(fmt.Sprintf("Genesis txid prefix: %s\n", strings.ToUpper(s)))
 
 	if headers {
@@ -762,11 +762,11 @@ func (p *CoinSparkAssetRef) String() string {
 
 // Returns true if all values in the asset reference are in their permitted ranges, false otherwise.
 func (p *CoinSparkAssetRef) IsValid() bool {
-	if p.blockNum != COINSPARK_TRANSFER_BLOCK_NUM_DEFAULT_ROUTE {
-		if p.blockNum < 0 || p.blockNum > COINSPARK_ASSETREF_BLOCK_NUM_MAX {
+	if p.BlockNum != COINSPARK_TRANSFER_BLOCK_NUM_DEFAULT_ROUTE {
+		if p.BlockNum < 0 || p.BlockNum > COINSPARK_ASSETREF_BLOCK_NUM_MAX {
 			goto assetRefIsInvalid
 		}
-		if p.txOffset < 0 || p.txOffset > COINSPARK_ASSETREF_TX_OFFSET_MAX {
+		if p.TxOffset < 0 || p.TxOffset > COINSPARK_ASSETREF_TX_OFFSET_MAX {
 			goto assetRefIsInvalid
 		}
 	}
@@ -779,9 +779,9 @@ assetRefIsInvalid:
 
 // Returns true if the two CoinSparkAssetRef structures are identical
 func (p *CoinSparkAssetRef) Match(other *CoinSparkAssetRef) bool {
-	return (p.txIDPrefix == other.txIDPrefix &&
-		p.txOffset == other.txOffset) &&
-		(p.blockNum == other.blockNum)
+	return (p.TxIDPrefix == other.TxIDPrefix &&
+		p.TxOffset == other.TxOffset) &&
+		(p.BlockNum == other.BlockNum)
 }
 
 // Encodes the assetRef to a byte array
@@ -792,8 +792,8 @@ func (p *CoinSparkAssetRef) Encode() []byte {
 	if !p.IsValid() {
 		goto cannotEncodeAssetRef
 	}
-	txIDPrefixInteger = 256*int(p.txIDPrefix[1]) + int(p.txIDPrefix[0])
-	buffer.WriteString(fmt.Sprintf("%d-%d-%d", p.blockNum, p.txOffset, txIDPrefixInteger))
+	txIDPrefixInteger = 256*int(p.TxIDPrefix[1]) + int(p.TxIDPrefix[0])
+	buffer.WriteString(fmt.Sprintf("%d-%d-%d", p.BlockNum, p.TxOffset, txIDPrefixInteger))
 	return buffer.Bytes()
 
 cannotEncodeAssetRef:
@@ -813,17 +813,17 @@ func (p *CoinSparkAssetRef) Decode(assetRef string) bool {
 		return false
 	}
 
-	p.blockNum = int64(blockNum)
-	p.txOffset = int64(txOffset)
-	p.txIDPrefix = [2]byte{byte(txIDPrefixInteger % 256), byte(txIDPrefixInteger / 256)}
+	p.BlockNum = int64(blockNum)
+	p.TxOffset = int64(txOffset)
+	p.TxIDPrefix = [2]byte{byte(txIDPrefixInteger % 256), byte(txIDPrefixInteger / 256)}
 	return p.IsValid()
 }
 
 func NewCoinSparkAssetRef(blockNum int64, txOffset int64, txIDPrefix []byte) *CoinSparkAssetRef {
 	p := new(CoinSparkAssetRef)
-	p.blockNum = blockNum
-	p.txOffset = txOffset
-	p.txIDPrefix = [2]byte{txIDPrefix[0], txIDPrefix[1]}
+	p.BlockNum = blockNum
+	p.TxOffset = txOffset
+	p.TxIDPrefix = [2]byte{txIDPrefix[0], txIDPrefix[1]}
 	return p
 }
 
@@ -831,23 +831,23 @@ func NewCoinSparkAssetRef(blockNum int64, txOffset int64, txIDPrefix []byte) *Co
 func (p *CoinSparkAssetRef) Compare(otherAssetRef *CoinSparkAssetRef) int {
 	// -1 if this<otherAssetRef, 1 if otherAssetRef>this, 0 otherwise
 
-	if p.blockNum != otherAssetRef.blockNum {
-		if p.blockNum < otherAssetRef.blockNum {
+	if p.BlockNum != otherAssetRef.BlockNum {
+		if p.BlockNum < otherAssetRef.BlockNum {
 			return -1
 		} else {
 			return 1
 		}
-	} else if p.blockNum == COINSPARK_TRANSFER_BLOCK_NUM_DEFAULT_ROUTE { // # in this case don't compare other fields
+	} else if p.BlockNum == COINSPARK_TRANSFER_BLOCK_NUM_DEFAULT_ROUTE { // # in this case don't compare other fields
 		return 0
-	} else if p.txOffset != otherAssetRef.txOffset {
-		if p.txOffset < otherAssetRef.txOffset {
+	} else if p.TxOffset != otherAssetRef.TxOffset {
+		if p.TxOffset < otherAssetRef.TxOffset {
 			return -1
 		} else {
 			return 1
 		}
 	} else {
-		thisTxIDPrefixLower := strings.ToLower(hex.EncodeToString(p.txIDPrefix[:]))
-		otherTxIDPrefixLower := strings.ToLower(hex.EncodeToString(otherAssetRef.txIDPrefix[:]))
+		thisTxIDPrefixLower := strings.ToLower(hex.EncodeToString(p.TxIDPrefix[:]))
+		otherTxIDPrefixLower := strings.ToLower(hex.EncodeToString(otherAssetRef.TxIDPrefix[:]))
 		if thisTxIDPrefixLower != otherTxIDPrefixLower { // # comparing hex gives same order as comparing bytes
 			if thisTxIDPrefixLower < otherTxIDPrefixLower {
 				return -1
@@ -1265,25 +1265,25 @@ func CountNonLastRegularOutputs(outputsRegular []bool) int {
 }
 
 func (p *CoinSparkGenesis) Clear() {
-	p.qtyMantissa = 0
-	p.qtyExponent = 0
-	p.chargeFlatMantissa = 0
-	p.chargeFlatExponent = 0
+	p.QtyMantissa = 0
+	p.QtyExponent = 0
+	p.ChargeFlatMantissa = 0
+	p.ChargeBasisPoints = 0
 	p.chargeBasisPoints = 0
-	p.useHttps = false
-	p.domainName = "" //[0]=0x00
-	p.usePrefix = true
-	p.pagePath = "" //[0]=0x00
-	p.assetHash = nil
-	p.assetHashLen = 0
+	p.UseHttps = false
+	p.DomainName = "" //[0]=0x00
+	p.UsePrefix = true
+	p.PagePath = "" //[0]=0x00
+	p.AssetHash = nil
+	p.AssetHashLen = 0
 }
 
 func (p *CoinSparkGenesis) GetHashLen() int {
-	return p.assetHashLen
+	return p.AssetHashLen
 }
 
 func (p *CoinSparkGenesis) GetChargeFlat() CoinSparkAssetQty {
-	x := MantissaExponentToQty(p.chargeFlatMantissa, p.chargeFlatExponent)
+	x := MantissaExponentToQty(p.ChargeFlatMantissa, p.ChargeBasisPoints)
 	return CoinSparkAssetQty(x)
 }
 
@@ -1293,20 +1293,20 @@ func (p *CoinSparkGenesis) SetChargeFlat(desiredChargeFlat CoinSparkAssetQty, ro
 	if chargeFlatExponent == COINSPARK_GENESIS_CHARGE_FLAT_EXPONENT_MAX {
 		chargeFlatMantissa = COINSPARK_MIN16(chargeFlatMantissa, COINSPARK_GENESIS_CHARGE_FLAT_MANTISSA_MAX_IF_EXP_MAX)
 	}
-	p.chargeFlatMantissa = chargeFlatMantissa
-	p.chargeFlatExponent = chargeFlatExponent
+	p.ChargeFlatMantissa = chargeFlatMantissa
+	p.ChargeBasisPoints = chargeFlatExponent
 	return p.GetChargeFlat()
 }
 
 func (p *CoinSparkGenesis) GetQty() CoinSparkAssetQty {
-	x := MantissaExponentToQty(p.qtyMantissa, p.qtyExponent)
+	x := MantissaExponentToQty(p.QtyMantissa, p.QtyExponent)
 	return CoinSparkAssetQty(x)
 }
 
 func (p *CoinSparkGenesis) SetQty(desiredQty CoinSparkAssetQty, rounding int) CoinSparkAssetQty {
 	_, qtyMantissa, qtyExponent := QtyToMantissaExponent(desiredQty, rounding, COINSPARK_GENESIS_QTY_MANTISSA_MAX, COINSPARK_GENESIS_QTY_EXPONENT_MAX)
-	p.qtyMantissa = qtyMantissa
-	p.qtyExponent = qtyExponent
+	p.QtyMantissa = qtyMantissa
+	p.QtyExponent = qtyExponent
 	return p.GetQty()
 }
 
@@ -1320,72 +1320,72 @@ func (p *CoinSparkGenesis) String() string {
 	buffer := bytes.Buffer{}
 
 	quantity = p.GetQty()
-	quantityEncoded = int((p.qtyExponent*COINSPARK_GENESIS_QTY_EXPONENT_MULTIPLE + p.qtyMantissa) & COINSPARK_GENESIS_QTY_MASK)
+	quantityEncoded = int((p.QtyExponent*COINSPARK_GENESIS_QTY_EXPONENT_MULTIPLE + p.QtyMantissa) & COINSPARK_GENESIS_QTY_MASK)
 	chargeFlat = p.GetChargeFlat()
-	chargeFlatEncoded = int(p.chargeFlatExponent*COINSPARK_GENESIS_CHARGE_FLAT_EXPONENT_MULTIPLE + p.chargeFlatMantissa)
-	domainPathMetadata := EncodeDomainAndOrPath(p.domainName, p.useHttps, p.pagePath, p.usePrefix, false)
+	chargeFlatEncoded = int(p.ChargeBasisPoints*COINSPARK_GENESIS_CHARGE_FLAT_EXPONENT_MULTIPLE + p.ChargeFlatMantissa)
+	domainPathMetadata := EncodeDomainAndOrPath(p.DomainName, p.UseHttps, p.PagePath, p.UsePrefix, false)
 
 	buffer.WriteString("COINSPARK GENESIS\n")
-	buffer.WriteString(fmt.Sprintf("   Quantity mantissa: %d\n", p.qtyMantissa))
-	buffer.WriteString(fmt.Sprintf("   Quantity exponent: %d\n", p.qtyExponent))
+	buffer.WriteString(fmt.Sprintf("   Quantity mantissa: %d\n", p.QtyMantissa))
+	buffer.WriteString(fmt.Sprintf("   Quantity exponent: %d\n", p.QtyExponent))
 
 	buffer.WriteString(fmt.Sprintf("    Quantity encoded: %d (small endian hex %s)\n", quantityEncoded, UnsignedToSmallEndianHex(int64(quantityEncoded), COINSPARK_GENESIS_QTY_FLAGS_LENGTH)))
 	buffer.WriteString(fmt.Sprintf("      Quantity value: %d\n", quantity))
-	buffer.WriteString(fmt.Sprintf("Flat charge mantissa: %d\n", p.chargeFlatMantissa))
-	buffer.WriteString(fmt.Sprintf("Flat charge exponent: %d\n", p.chargeFlatExponent))
+	buffer.WriteString(fmt.Sprintf("Flat charge mantissa: %d\n", p.ChargeFlatMantissa))
+	buffer.WriteString(fmt.Sprintf("Flat charge exponent: %d\n", p.ChargeBasisPoints))
 	buffer.WriteString(fmt.Sprintf(" Flat charge encoded: %d (small endian hex %s)\n", chargeFlatEncoded, UnsignedToSmallEndianHex(int64(chargeFlatEncoded), COINSPARK_GENESIS_CHARGE_FLAT_LENGTH)))
 	buffer.WriteString(fmt.Sprintf("   Flat charge value: %d\n", chargeFlat))
 	buffer.WriteString(fmt.Sprintf(" Basis points charge: %d (hex %s)\n", p.chargeBasisPoints, UnsignedToSmallEndianHex(int64(p.chargeBasisPoints), COINSPARK_GENESIS_CHARGE_BPS_LENGTH)))
 
 	httpMode := "http"
-	if p.useHttps {
+	if p.UseHttps {
 		httpMode = "https"
 	}
 	prefix := ""
-	if p.usePrefix {
+	if p.UsePrefix {
 		prefix = "coinspark/"
 	}
 	pagePath := "[spent-txid]"
-	if len(p.pagePath) > 0 {
-		pagePath = p.pagePath
+	if len(p.PagePath) > 0 {
+		pagePath = p.PagePath
 	}
 	buffer.WriteString(fmt.Sprintf("           Asset URL: %s://%s/%s%s/ (length %d+%d encoded %s length %d)\n",
-		httpMode, p.domainName,
+		httpMode, p.DomainName,
 		prefix, pagePath,
-		len(p.domainName), len(p.pagePath),
+		len(p.DomainName), len(p.PagePath),
 		strings.ToUpper(hex.EncodeToString(domainPathMetadata)),
 		len(domainPathMetadata)))
 
-	buffer.WriteString(fmt.Sprintf("          Asset hash: %s (length %d)\n", strings.ToUpper(hex.EncodeToString(p.assetHash[0:p.assetHashLen])), p.assetHashLen))
+	buffer.WriteString(fmt.Sprintf("          Asset hash: %s (length %d)\n", strings.ToUpper(hex.EncodeToString(p.AssetHash[0:p.AssetHashLen])), p.AssetHashLen))
 	buffer.WriteString("END COINSPARK GENESIS\n\n")
 
 	return buffer.String()
 }
 
 func (p *CoinSparkGenesis) IsValid() bool {
-	if (p.qtyMantissa < COINSPARK_GENESIS_QTY_MANTISSA_MIN) || (p.qtyMantissa > COINSPARK_GENESIS_QTY_MANTISSA_MAX) {
+	if (p.QtyMantissa < COINSPARK_GENESIS_QTY_MANTISSA_MIN) || (p.QtyMantissa > COINSPARK_GENESIS_QTY_MANTISSA_MAX) {
 		return false
 	}
 
-	if (p.qtyExponent < COINSPARK_GENESIS_QTY_EXPONENT_MIN) || (p.qtyExponent > COINSPARK_GENESIS_QTY_EXPONENT_MAX) {
+	if (p.QtyExponent < COINSPARK_GENESIS_QTY_EXPONENT_MIN) || (p.QtyExponent > COINSPARK_GENESIS_QTY_EXPONENT_MAX) {
 		return false
 	}
 
-	if (p.chargeFlatExponent < COINSPARK_GENESIS_CHARGE_FLAT_EXPONENT_MIN) || (p.chargeFlatExponent > COINSPARK_GENESIS_CHARGE_FLAT_EXPONENT_MAX) {
+	if (p.ChargeBasisPoints < COINSPARK_GENESIS_CHARGE_FLAT_EXPONENT_MIN) || (p.ChargeBasisPoints > COINSPARK_GENESIS_CHARGE_FLAT_EXPONENT_MAX) {
 		return false
 	}
 
-	if p.chargeFlatMantissa < COINSPARK_GENESIS_CHARGE_FLAT_MANTISSA_MIN {
+	if p.ChargeFlatMantissa < COINSPARK_GENESIS_CHARGE_FLAT_MANTISSA_MIN {
 		return false
 	}
 
 	var tmp int16
-	if p.chargeFlatExponent == COINSPARK_GENESIS_CHARGE_FLAT_EXPONENT_MAX {
+	if p.ChargeBasisPoints == COINSPARK_GENESIS_CHARGE_FLAT_EXPONENT_MAX {
 		tmp = COINSPARK_GENESIS_CHARGE_FLAT_MANTISSA_MAX_IF_EXP_MAX
 	} else {
 		tmp = COINSPARK_GENESIS_CHARGE_FLAT_MANTISSA_MAX
 	}
-	if p.chargeFlatMantissa > tmp {
+	if p.ChargeFlatMantissa > tmp {
 		return false
 	}
 
@@ -1393,15 +1393,15 @@ func (p *CoinSparkGenesis) IsValid() bool {
 		return false
 	}
 
-	if len(p.domainName) > COINSPARK_GENESIS_DOMAIN_NAME_MAX_LEN {
+	if len(p.DomainName) > COINSPARK_GENESIS_DOMAIN_NAME_MAX_LEN {
 		return false
 	}
 
-	if len(p.pagePath) > COINSPARK_GENESIS_PAGE_PATH_MAX_LEN {
+	if len(p.PagePath) > COINSPARK_GENESIS_PAGE_PATH_MAX_LEN {
 		return false
 	}
 
-	if (p.assetHashLen < COINSPARK_GENESIS_HASH_MIN_LEN) || (p.assetHashLen > COINSPARK_GENESIS_HASH_MAX_LEN) {
+	if (p.AssetHashLen < COINSPARK_GENESIS_HASH_MIN_LEN) || (p.AssetHashLen > COINSPARK_GENESIS_HASH_MAX_LEN) {
 		return false
 	}
 
@@ -1412,16 +1412,16 @@ func (p *CoinSparkGenesis) Match(other *CoinSparkGenesis, strict bool) bool {
 	var hashCompareLen int
 	var floatQuantitiesMatch bool
 
-	hashCompareLen = COINSPARK_MIN(p.assetHashLen, other.assetHashLen)
+	hashCompareLen = COINSPARK_MIN(p.AssetHashLen, other.AssetHashLen)
 	hashCompareLen = COINSPARK_MIN(hashCompareLen, COINSPARK_GENESIS_HASH_MAX_LEN)
 
 	if strict {
-		floatQuantitiesMatch = (p.qtyMantissa == other.qtyMantissa) && (p.qtyExponent == other.qtyExponent) && (p.chargeFlatMantissa == other.chargeFlatMantissa) && (p.chargeFlatExponent == other.chargeFlatExponent)
+		floatQuantitiesMatch = (p.QtyMantissa == other.QtyMantissa) && (p.QtyExponent == other.QtyExponent) && (p.ChargeFlatMantissa == other.ChargeFlatMantissa) && (p.ChargeBasisPoints == other.ChargeBasisPoints)
 	} else {
 		floatQuantitiesMatch = p.GetQty() == other.GetQty() && p.GetChargeFlat() == other.GetChargeFlat()
 	}
 
-	return (floatQuantitiesMatch && (p.chargeBasisPoints == other.chargeBasisPoints) && p.useHttps == other.useHttps && strings.ToLower(p.domainName) == strings.ToLower(other.domainName) && p.usePrefix == other.usePrefix && strings.ToLower(p.pagePath) == strings.ToLower(other.pagePath) && bytes.Equal(p.assetHash[0:hashCompareLen], other.assetHash[0:hashCompareLen]))
+	return (floatQuantitiesMatch && (p.chargeBasisPoints == other.chargeBasisPoints) && p.UseHttps == other.UseHttps && strings.ToLower(p.DomainName) == strings.ToLower(other.DomainName) && p.UsePrefix == other.UsePrefix && strings.ToLower(p.PagePath) == strings.ToLower(other.PagePath) && bytes.Equal(p.AssetHash[0:hashCompareLen], other.AssetHash[0:hashCompareLen]))
 
 }
 
@@ -1458,14 +1458,14 @@ func (p *CoinSparkGenesis) Apply(outputsRegular []bool) []CoinSparkAssetQty {
 // Returns empty string if fail
 func (p *CoinSparkGenesis) CalcAssetURL(firstSpentTxID string, firstSpentVout int) string {
 	var protocol string
-	if p.useHttps {
+	if p.UseHttps {
 		protocol = "https"
 	} else {
 		protocol = "http"
 	}
 
 	var prefix string
-	if p.usePrefix {
+	if p.UsePrefix {
 		prefix = "coinspark/"
 	} else {
 		prefix = ""
@@ -1473,7 +1473,7 @@ func (p *CoinSparkGenesis) CalcAssetURL(firstSpentTxID string, firstSpentVout in
 
 	// suffix uses path but if not valid uses 16 bytes from txid starting at pos firstSpentVout % 64, and
 	// wrap around to front of string. like a circular buffer.
-	var suffix string = p.pagePath
+	var suffix string = p.PagePath
 	if suffix == "" {
 		if firstSpentTxID == "" || len(firstSpentTxID) != 64 {
 			return ""
@@ -1483,7 +1483,7 @@ func (p *CoinSparkGenesis) CalcAssetURL(firstSpentTxID string, firstSpentVout in
 		suffix = buffer[startPos : startPos+16] // slice works on ASCII string which we expect
 	}
 
-	s := fmt.Sprintf("%s://%s/%s%s/", protocol, p.domainName, prefix, suffix)
+	s := fmt.Sprintf("%s://%s/%s%s/", protocol, p.DomainName, prefix, suffix)
 	return s
 }
 
@@ -1497,7 +1497,7 @@ func (p *CoinSparkGenesis) CalcHashLen(metadataMaxLen int) int {
 
 	assetHashLen := metadataMaxLen - COINSPARK_METADATA_IDENTIFIER_LEN - 1 - COINSPARK_GENESIS_QTY_FLAGS_LENGTH
 
-	if p.chargeFlatMantissa > 0 {
+	if p.ChargeFlatMantissa > 0 {
 		assetHashLen -= COINSPARK_GENESIS_CHARGE_FLAT_LENGTH
 	}
 
@@ -1505,8 +1505,8 @@ func (p *CoinSparkGenesis) CalcHashLen(metadataMaxLen int) int {
 		assetHashLen -= COINSPARK_GENESIS_CHARGE_BPS_LENGTH
 	}
 
-	domainPathLen := len(p.pagePath) + 1
-	theIP := net.ParseIP(p.domainName)
+	domainPathLen := len(p.PagePath) + 1
+	theIP := net.ParseIP(p.DomainName)
 	if theIP != nil {
 		theIP = theIP.To4() // could return 16 byte slice
 	}
@@ -1514,7 +1514,7 @@ func (p *CoinSparkGenesis) CalcHashLen(metadataMaxLen int) int {
 		assetHashLen -= 5 // packing and IP octets
 	} else {
 		assetHashLen -= 1 // packing
-		shortDomainName, _ := ShrinkLowerDomainName(p.domainName)
+		shortDomainName, _ := ShrinkLowerDomainName(p.DomainName)
 		domainPathLen += len(shortDomainName) + 1
 	}
 
@@ -1563,8 +1563,8 @@ func (p *CoinSparkGenesis) Decode(buffer []byte) bool {
 		return false
 	}
 
-	p.qtyMantissa = int16((quantityEncoded & COINSPARK_GENESIS_QTY_MASK) % COINSPARK_GENESIS_QTY_EXPONENT_MULTIPLE)
-	p.qtyExponent = int16((quantityEncoded & COINSPARK_GENESIS_QTY_MASK) / COINSPARK_GENESIS_QTY_EXPONENT_MULTIPLE)
+	p.QtyMantissa = int16((quantityEncoded & COINSPARK_GENESIS_QTY_MASK) % COINSPARK_GENESIS_QTY_EXPONENT_MULTIPLE)
+	p.QtyExponent = int16((quantityEncoded & COINSPARK_GENESIS_QTY_MASK) / COINSPARK_GENESIS_QTY_EXPONENT_MULTIPLE)
 
 	// Charges - flat and basis points
 
@@ -1572,11 +1572,11 @@ func (p *CoinSparkGenesis) Decode(buffer []byte) bool {
 		chargeEncoded := int(metadata[0])
 		metadata = metadata[COINSPARK_GENESIS_CHARGE_FLAT_LENGTH:]
 
-		p.chargeFlatMantissa = int16(chargeEncoded % COINSPARK_GENESIS_CHARGE_FLAT_EXPONENT_MULTIPLE)
-		p.chargeFlatExponent = int16(chargeEncoded / COINSPARK_GENESIS_CHARGE_FLAT_EXPONENT_MULTIPLE)
+		p.ChargeFlatMantissa = int16(chargeEncoded % COINSPARK_GENESIS_CHARGE_FLAT_EXPONENT_MULTIPLE)
+		p.ChargeBasisPoints = int16(chargeEncoded / COINSPARK_GENESIS_CHARGE_FLAT_EXPONENT_MULTIPLE)
 	} else {
-		p.chargeFlatMantissa = 0
-		p.chargeFlatExponent = 0
+		p.ChargeFlatMantissa = 0
+		p.ChargeBasisPoints = 0
 	}
 
 	if quantityEncoded&COINSPARK_GENESIS_FLAG_CHARGE_BPS > 0 {
@@ -1594,15 +1594,15 @@ func (p *CoinSparkGenesis) Decode(buffer []byte) bool {
 	}
 
 	metadata = metadata[result.decodedChars:]
-	p.useHttps = result.useHttps
-	p.domainName = result.domainName
-	p.usePrefix = result.usePrefix
-	p.pagePath = result.pagePath
+	p.UseHttps = result.useHttps
+	p.DomainName = result.domainName
+	p.UsePrefix = result.usePrefix
+	p.PagePath = result.pagePath
 
 	// Asset hash
 
-	p.assetHashLen = COINSPARK_MIN(len(metadata), COINSPARK_GENESIS_HASH_MAX_LEN)
-	p.assetHash = metadata[:p.assetHashLen]
+	p.AssetHashLen = COINSPARK_MIN(len(metadata), COINSPARK_GENESIS_HASH_MAX_LEN)
+	p.AssetHash = metadata[:p.AssetHashLen]
 
 	// Return validity
 
@@ -1622,8 +1622,8 @@ func (p *CoinSparkGenesis) Encode(metadataMaxLen int) (err error, metadata []byt
 
 	//  Quantity mantissa and exponent
 
-	var quantityEncoded int = int((p.qtyExponent*COINSPARK_GENESIS_QTY_EXPONENT_MULTIPLE + p.qtyMantissa) & COINSPARK_GENESIS_QTY_MASK)
-	if p.chargeFlatMantissa > 0 {
+	var quantityEncoded int = int((p.QtyExponent*COINSPARK_GENESIS_QTY_EXPONENT_MULTIPLE + p.QtyMantissa) & COINSPARK_GENESIS_QTY_MASK)
+	if p.ChargeFlatMantissa > 0 {
 		quantityEncoded |= COINSPARK_GENESIS_FLAG_CHARGE_FLAT
 	}
 	if p.chargeBasisPoints > 0 {
@@ -1639,7 +1639,7 @@ func (p *CoinSparkGenesis) Encode(metadataMaxLen int) (err error, metadata []byt
 	//  Charges - flat and basis points
 
 	if (quantityEncoded & COINSPARK_GENESIS_FLAG_CHARGE_FLAT) != 0 {
-		chargeEncoded := p.chargeFlatExponent*COINSPARK_GENESIS_CHARGE_FLAT_EXPONENT_MULTIPLE + p.chargeFlatMantissa
+		chargeEncoded := p.ChargeBasisPoints*COINSPARK_GENESIS_CHARGE_FLAT_EXPONENT_MULTIPLE + p.ChargeFlatMantissa
 
 		// COINSPARK_GENESIS_CHARGE_FLAT_LENGTH = 1
 		buf.WriteByte(uint8(chargeEncoded))
@@ -1652,7 +1652,7 @@ func (p *CoinSparkGenesis) Encode(metadataMaxLen int) (err error, metadata []byt
 
 	// Domain name and page path
 
-	domainBuf := EncodeDomainAndOrPath(p.domainName, p.useHttps, p.pagePath, p.usePrefix, false)
+	domainBuf := EncodeDomainAndOrPath(p.DomainName, p.UseHttps, p.PagePath, p.UsePrefix, false)
 	if domainBuf == nil {
 		return errors.New("cannot write domain name/path"), metadata
 	}
@@ -1660,7 +1660,7 @@ func (p *CoinSparkGenesis) Encode(metadataMaxLen int) (err error, metadata []byt
 	buf.Write(domainBuf)
 
 	// Asset hash
-	buf.Write(p.assetHash[:p.assetHashLen])
+	buf.Write(p.AssetHash[:p.AssetHashLen])
 
 	// Check the total length is within the specified limit
 
@@ -2001,15 +2001,15 @@ func (p *CoinSparkPaymentRef) Decode(buffer []byte) bool {
 }
 
 func (p *CoinSparkIORange) Clear() {
-	p.count = 0
-	p.first = 0
+	p.Count = 0
+	p.First = 0
 }
 
 func (p *CoinSparkIORange) IsValid() bool {
-	if (p.first < 0) || (p.first > COINSPARK_IO_INDEX_MAX) {
+	if (p.First < 0) || (p.First > COINSPARK_IO_INDEX_MAX) {
 		return false
 	}
-	if (p.count < 0) || (p.count > COINSPARK_IO_INDEX_MAX) {
+	if (p.Count < 0) || (p.Count > COINSPARK_IO_INDEX_MAX) {
 		return false
 	}
 	return true
@@ -2022,31 +2022,31 @@ func NewCoinSparkIORange() *CoinSparkIORange {
 }
 
 func (p *CoinSparkIORange) Match(other *CoinSparkIORange) bool {
-	return p.first == other.first && p.count == other.count
+	return p.First == other.First && p.Count == other.Count
 }
 
 func (p *CoinSparkTransfer) Clear() {
-	p.assetRef = CoinSparkAssetRef{}
-	p.inputs = CoinSparkIORange{}
-	p.outputs = CoinSparkIORange{}
-	p.qtyPerOutput = CoinSparkAssetQty(0)
+	p.AssetRef = CoinSparkAssetRef{}
+	p.Inputs = CoinSparkIORange{}
+	p.Outputs = CoinSparkIORange{}
+	p.QtyPerOutput = CoinSparkAssetQty(0)
 }
 
 func (p *CoinSparkTransfer) IsValid() bool {
-	if !(p.assetRef.IsValid() && p.inputs.IsValid() && p.outputs.IsValid()) {
+	if !(p.AssetRef.IsValid() && p.Inputs.IsValid() && p.Outputs.IsValid()) {
 		return false
 	}
-	if p.qtyPerOutput < 0 || p.qtyPerOutput > COINSPARK_ASSET_QTY_MAX {
+	if p.QtyPerOutput < 0 || p.QtyPerOutput > COINSPARK_ASSET_QTY_MAX {
 		return false
 	}
 	return true
 }
 
 func (p *CoinSparkTransfer) Match(other *CoinSparkTransfer) bool {
-	if p.assetRef.blockNum == COINSPARK_TRANSFER_BLOCK_NUM_DEFAULT_ROUTE {
-		return other.assetRef.blockNum == COINSPARK_TRANSFER_BLOCK_NUM_DEFAULT_ROUTE && p.inputs.Match(&other.inputs) && p.outputs.first == other.outputs.first
+	if p.AssetRef.BlockNum == COINSPARK_TRANSFER_BLOCK_NUM_DEFAULT_ROUTE {
+		return other.AssetRef.BlockNum == COINSPARK_TRANSFER_BLOCK_NUM_DEFAULT_ROUTE && p.Inputs.Match(&other.Inputs) && p.Outputs.First == other.Outputs.First
 	}
-	return p.assetRef.Match(&other.assetRef) && p.inputs.Match(&other.inputs) && p.outputs.Match(&other.outputs) && p.qtyPerOutput == other.qtyPerOutput
+	return p.AssetRef.Match(&other.AssetRef) && p.Inputs.Match(&other.Inputs) && p.Outputs.Match(&other.Outputs) && p.QtyPerOutput == other.QtyPerOutput
 }
 
 func DecodePackingExtend(packingExtend byte, forMessages bool) (bool, string) {
@@ -2073,26 +2073,26 @@ func PackingTypeToValues(packingType string, previousRange *CoinSparkIORange, co
 
 	if packingType == "_0P" {
 		if previousRange != nil {
-			r.first = previousRange.first
-			r.count = previousRange.count
+			r.First = previousRange.First
+			r.Count = previousRange.Count
 		} else {
-			r.first = 0
-			r.count = 1
+			r.First = 0
+			r.Count = 1
 		}
 	} else if packingType == "_1S" {
 		if previousRange != nil {
-			r.first = previousRange.first + previousRange.count
+			r.First = previousRange.First + previousRange.Count
 		} else {
-			r.first = 1
+			r.First = 1
 		}
-		r.count = 1
+		r.Count = 1
 	} else if packingType == "_0_1_BYTE" {
-		r.first = 0
+		r.First = 0
 	} else if (packingType == "_1_0_BYTE") || (packingType == "_2_0_BYTES") {
-		r.count = 1
+		r.Count = 1
 	} else if packingType == "_ALL" {
-		r.first = 0
-		r.count = CoinSparkIOIndex(countInputOutputs)
+		r.First = 0
+		r.Count = CoinSparkIOIndex(countInputOutputs)
 	}
 	return r
 }
@@ -2114,13 +2114,13 @@ func (p *CoinSparkTransfer) Decode(metadata []byte, previousTransfer *CoinSparkT
 
 	if (packing & COINSPARK_PACKING_GENESIS_MASK) == COINSPARK_PACKING_GENESIS_PREV {
 		if previousTransfer != nil {
-			p.assetRef = previousTransfer.assetRef
+			p.AssetRef = previousTransfer.AssetRef
 		} else {
 			// it's for a default route
-			p.assetRef.blockNum = COINSPARK_TRANSFER_BLOCK_NUM_DEFAULT_ROUTE
-			p.assetRef.txOffset = 0
+			p.AssetRef.BlockNum = COINSPARK_TRANSFER_BLOCK_NUM_DEFAULT_ROUTE
+			p.AssetRef.TxOffset = 0
 			var emptyPrefix [COINSPARK_ASSETREF_TXID_PREFIX_LEN]byte
-			p.assetRef.txIDPrefix = emptyPrefix
+			p.AssetRef.TxIDPrefix = emptyPrefix
 		}
 	}
 
@@ -2178,12 +2178,12 @@ func (p *CoinSparkTransfer) Decode(metadata []byte, previousTransfer *CoinSparkT
 	// Final stage of packing for input and output indices
 	var prevInputs, prevOutputs *CoinSparkIORange
 	if previousTransfer != nil {
-		prevInputs = &previousTransfer.inputs
-		prevOutputs = &previousTransfer.outputs
+		prevInputs = &previousTransfer.Inputs
+		prevOutputs = &previousTransfer.Outputs
 	}
 
-	p.inputs = PackingTypeToValues(inputPackingType, prevInputs, countInputs)
-	p.outputs = PackingTypeToValues(outputPackingType, prevOutputs, countOutputs)
+	p.Inputs = PackingTypeToValues(inputPackingType, prevInputs, countInputs)
+	p.Outputs = PackingTypeToValues(outputPackingType, prevOutputs, countOutputs)
 
 	// Read in the fields as appropriate
 
@@ -2199,14 +2199,14 @@ func (p *CoinSparkTransfer) Decode(metadata []byte, previousTransfer *CoinSparkT
 	if !success {
 		return 0
 	} else if counts.blockNumBytes > 0 {
-		p.assetRef.blockNum = int64(result)
+		p.AssetRef.BlockNum = int64(result)
 	}
 
 	success, result = ShiftLittleEndianBytesToInt(&metadataArray, counts.txOffsetBytes)
 	if !success {
 		return 0
 	} else if counts.txOffsetBytes > 0 {
-		p.assetRef.txOffset = int64(result)
+		p.AssetRef.TxOffset = int64(result)
 	}
 
 	txIDPrefixBytes := counts.txIDPrefixBytes
@@ -2216,42 +2216,42 @@ func (p *CoinSparkTransfer) Decode(metadata []byte, previousTransfer *CoinSparkT
 		}
 		var prefix [COINSPARK_ASSETREF_TXID_PREFIX_LEN]byte
 		copy(prefix[:], metadataArray[:txIDPrefixBytes])
-		p.assetRef.txIDPrefix = prefix
+		p.AssetRef.TxIDPrefix = prefix
 		metadataArray = metadataArray[txIDPrefixBytes:]
 	}
 	success, result = ShiftLittleEndianBytesToInt(&metadataArray, counts.firstInputBytes)
 	if !success {
 		return 0
 	} else if counts.firstInputBytes > 0 {
-		p.inputs.first = CoinSparkIOIndex(result)
+		p.Inputs.First = CoinSparkIOIndex(result)
 	}
 
 	success, result = ShiftLittleEndianBytesToInt(&metadataArray, counts.countInputsBytes)
 	if !success {
 		return 0
 	} else if counts.countInputsBytes > 0 {
-		p.inputs.count = CoinSparkIOIndex(result)
+		p.Inputs.Count = CoinSparkIOIndex(result)
 	}
 
 	success, result = ShiftLittleEndianBytesToInt(&metadataArray, counts.firstOutputBytes)
 	if !success {
 		return 0
 	} else if counts.firstOutputBytes > 0 {
-		p.outputs.first = CoinSparkIOIndex(result)
+		p.Outputs.First = CoinSparkIOIndex(result)
 	}
 
 	success, result = ShiftLittleEndianBytesToInt(&metadataArray, counts.countOutputsBytes)
 	if !success {
 		return 0
 	} else if counts.countOutputsBytes > 0 {
-		p.outputs.count = CoinSparkIOIndex(result)
+		p.Outputs.Count = CoinSparkIOIndex(result)
 	}
 
 	success, result = ShiftLittleEndianBytesToInt(&metadataArray, counts.quantityBytes)
 	if !success {
 		return 0
 	} else if counts.quantityBytes > 0 {
-		p.qtyPerOutput = CoinSparkAssetQty(result)
+		p.QtyPerOutput = CoinSparkAssetQty(result)
 	}
 
 	metadata = metadataArray // use remaining characters
@@ -2262,15 +2262,15 @@ func (p *CoinSparkTransfer) Decode(metadata []byte, previousTransfer *CoinSparkT
 
 	if packingQuantity == COINSPARK_PACKING_QUANTITY_1P {
 		if previousTransfer != nil {
-			p.qtyPerOutput = previousTransfer.qtyPerOutput
+			p.QtyPerOutput = previousTransfer.QtyPerOutput
 		} else {
-			p.qtyPerOutput = 1
+			p.QtyPerOutput = 1
 		}
 	} else if packingQuantity == COINSPARK_PACKING_QUANTITY_MAX {
-		p.qtyPerOutput = COINSPARK_ASSET_QTY_MAX
+		p.QtyPerOutput = COINSPARK_ASSET_QTY_MAX
 	} else if packingQuantity == COINSPARK_PACKING_QUANTITY_FLOAT {
-		decodeQuantity := p.qtyPerOutput & COINSPARK_TRANSFER_QTY_FLOAT_MASK
-		p.qtyPerOutput = CoinSparkAssetQty(MantissaExponentToQty(int16(decodeQuantity%COINSPARK_TRANSFER_QTY_FLOAT_EXPONENT_MULTIPLE),
+		decodeQuantity := p.QtyPerOutput & COINSPARK_TRANSFER_QTY_FLOAT_MASK
+		p.QtyPerOutput = CoinSparkAssetQty(MantissaExponentToQty(int16(decodeQuantity%COINSPARK_TRANSFER_QTY_FLOAT_EXPONENT_MULTIPLE),
 			int16(math.Floor(float64(decodeQuantity)/float64(COINSPARK_TRANSFER_QTY_FLOAT_EXPONENT_MULTIPLE)))))
 	}
 
@@ -2289,29 +2289,29 @@ func (p *CoinSparkTransfer) Encode(previousTransfer *CoinSparkTransfer, metadata
 	}
 
 	var packing, packingExtend byte
-	isDefaultRoute := (p.assetRef.blockNum == COINSPARK_TRANSFER_BLOCK_NUM_DEFAULT_ROUTE)
+	isDefaultRoute := (p.AssetRef.BlockNum == COINSPARK_TRANSFER_BLOCK_NUM_DEFAULT_ROUTE)
 
 	// Packing for genesis reference
 
 	if isDefaultRoute {
-		if previousTransfer != nil && (previousTransfer.assetRef.blockNum != COINSPARK_TRANSFER_BLOCK_NUM_DEFAULT_ROUTE) {
+		if previousTransfer != nil && (previousTransfer.AssetRef.BlockNum != COINSPARK_TRANSFER_BLOCK_NUM_DEFAULT_ROUTE) {
 			return nil // default route transfers have to come at the start
 		}
 
 		packing |= COINSPARK_PACKING_GENESIS_PREV
 
 	} else {
-		if previousTransfer != nil && p.assetRef.Match(&previousTransfer.assetRef) {
+		if previousTransfer != nil && p.AssetRef.Match(&previousTransfer.AssetRef) {
 			packing |= COINSPARK_PACKING_GENESIS_PREV
-		} else if p.assetRef.blockNum <= COINSPARK_UNSIGNED_3_BYTES_MAX {
-			if p.assetRef.txOffset <= COINSPARK_UNSIGNED_3_BYTES_MAX {
+		} else if p.AssetRef.BlockNum <= COINSPARK_UNSIGNED_3_BYTES_MAX {
+			if p.AssetRef.TxOffset <= COINSPARK_UNSIGNED_3_BYTES_MAX {
 				packing |= COINSPARK_PACKING_GENESIS_3_3_BYTES
-			} else if p.assetRef.txOffset <= COINSPARK_UNSIGNED_4_BYTES_MAX {
+			} else if p.AssetRef.TxOffset <= COINSPARK_UNSIGNED_4_BYTES_MAX {
 				packing |= COINSPARK_PACKING_GENESIS_3_4_BYTES
 			} else {
 				return nil
 			}
-		} else if (p.assetRef.blockNum <= COINSPARK_UNSIGNED_4_BYTES_MAX) && (p.assetRef.txOffset <= COINSPARK_UNSIGNED_4_BYTES_MAX) {
+		} else if (p.AssetRef.BlockNum <= COINSPARK_UNSIGNED_4_BYTES_MAX) && (p.AssetRef.TxOffset <= COINSPARK_UNSIGNED_4_BYTES_MAX) {
 			packing |= COINSPARK_PACKING_GENESIS_4_4_BYTES
 		} else {
 			return nil
@@ -2322,11 +2322,11 @@ func (p *CoinSparkTransfer) Encode(previousTransfer *CoinSparkTransfer, metadata
 	inputPackingOptions := map[string]bool{}
 	outputPackingOptions := map[string]bool{}
 	if previousTransfer != nil {
-		inputPackingOptions = GetPackingOptions(&previousTransfer.inputs, &p.inputs, countInputs, false)
-		outputPackingOptions = GetPackingOptions(&previousTransfer.outputs, &p.outputs, countOutputs, false)
+		inputPackingOptions = GetPackingOptions(&previousTransfer.Inputs, &p.Inputs, countInputs, false)
+		outputPackingOptions = GetPackingOptions(&previousTransfer.Outputs, &p.Outputs, countOutputs, false)
 	} else {
-		inputPackingOptions = GetPackingOptions(nil, &p.inputs, countInputs, false)
-		outputPackingOptions = GetPackingOptions(nil, &p.outputs, countOutputs, false)
+		inputPackingOptions = GetPackingOptions(nil, &p.Inputs, countInputs, false)
+		outputPackingOptions = GetPackingOptions(nil, &p.Outputs, countOutputs, false)
 	}
 
 	if inputPackingOptions["_0P"] && outputPackingOptions["_0P"] {
@@ -2361,26 +2361,26 @@ func (p *CoinSparkTransfer) Encode(previousTransfer *CoinSparkTransfer, metadata
 
 	// Packing for quantity
 
-	encodeQuantity := p.qtyPerOutput
+	encodeQuantity := p.QtyPerOutput
 
-	if (previousTransfer != nil && p.qtyPerOutput == previousTransfer.qtyPerOutput) ||
-		previousTransfer == nil && p.qtyPerOutput == 1 {
+	if (previousTransfer != nil && p.QtyPerOutput == previousTransfer.QtyPerOutput) ||
+		previousTransfer == nil && p.QtyPerOutput == 1 {
 		packing |= COINSPARK_PACKING_QUANTITY_1P
-	} else if p.qtyPerOutput >= COINSPARK_ASSET_QTY_MAX {
+	} else if p.QtyPerOutput >= COINSPARK_ASSET_QTY_MAX {
 		packing |= COINSPARK_PACKING_QUANTITY_MAX
-	} else if p.qtyPerOutput <= COINSPARK_UNSIGNED_BYTE_MAX {
+	} else if p.QtyPerOutput <= COINSPARK_UNSIGNED_BYTE_MAX {
 		packing |= COINSPARK_PACKING_QUANTITY_1_BYTE
-	} else if p.qtyPerOutput <= COINSPARK_UNSIGNED_2_BYTES_MAX {
+	} else if p.QtyPerOutput <= COINSPARK_UNSIGNED_2_BYTES_MAX {
 		packing |= COINSPARK_PACKING_QUANTITY_2_BYTES
 	} else {
-		quantityPerOutput, mantissa, exponent := QtyToMantissaExponent(p.qtyPerOutput, 0,
+		quantityPerOutput, mantissa, exponent := QtyToMantissaExponent(p.QtyPerOutput, 0,
 			COINSPARK_TRANSFER_QTY_FLOAT_MANTISSA_MAX, COINSPARK_TRANSFER_QTY_FLOAT_EXPONENT_MAX)
-		if CoinSparkAssetQty(quantityPerOutput) == p.qtyPerOutput {
+		if CoinSparkAssetQty(quantityPerOutput) == p.QtyPerOutput {
 			packing |= COINSPARK_PACKING_QUANTITY_FLOAT
 			encodeQuantity = CoinSparkAssetQty((exponent*COINSPARK_TRANSFER_QTY_FLOAT_EXPONENT_MULTIPLE + mantissa) & COINSPARK_TRANSFER_QTY_FLOAT_MASK)
-		} else if p.qtyPerOutput <= COINSPARK_UNSIGNED_3_BYTES_MAX {
+		} else if p.QtyPerOutput <= COINSPARK_UNSIGNED_3_BYTES_MAX {
 			packing |= COINSPARK_PACKING_QUANTITY_3_BYTES
-		} else if p.qtyPerOutput <= COINSPARK_UNSIGNED_4_BYTES_MAX {
+		} else if p.QtyPerOutput <= COINSPARK_UNSIGNED_4_BYTES_MAX {
 			packing |= COINSPARK_PACKING_QUANTITY_4_BYTES
 		} else {
 			packing |= COINSPARK_PACKING_QUANTITY_6_BYTES
@@ -2398,7 +2398,7 @@ func (p *CoinSparkTransfer) Encode(previousTransfer *CoinSparkTransfer, metadata
 		buf.WriteByte(packingExtend)
 	}
 
-	valbuf := WriteSmallEndianUnsigned(p.assetRef.blockNum, counts.blockNumBytes)
+	valbuf := WriteSmallEndianUnsigned(p.AssetRef.BlockNum, counts.blockNumBytes)
 	if valbuf == nil {
 		return nil
 	}
@@ -2406,7 +2406,7 @@ func (p *CoinSparkTransfer) Encode(previousTransfer *CoinSparkTransfer, metadata
 		buf.Write(valbuf)
 	}
 
-	valbuf = WriteSmallEndianUnsigned(p.assetRef.txOffset, counts.txOffsetBytes)
+	valbuf = WriteSmallEndianUnsigned(p.AssetRef.TxOffset, counts.txOffsetBytes)
 	if valbuf == nil {
 		return nil
 	}
@@ -2414,13 +2414,13 @@ func (p *CoinSparkTransfer) Encode(previousTransfer *CoinSparkTransfer, metadata
 		buf.Write(valbuf)
 	}
 
-	buf.Write(p.assetRef.txIDPrefix[:counts.txIDPrefixBytes])
-	padding := counts.txIDPrefixBytes - len(p.assetRef.txIDPrefix) // ensure right length
+	buf.Write(p.AssetRef.TxIDPrefix[:counts.txIDPrefixBytes])
+	padding := counts.txIDPrefixBytes - len(p.AssetRef.TxIDPrefix) // ensure right length
 	for i := 0; i < padding; i++ {
 		buf.WriteByte(0x00)
 	}
 
-	valbuf = WriteSmallEndianUnsigned(int64(p.inputs.first), counts.firstInputBytes)
+	valbuf = WriteSmallEndianUnsigned(int64(p.Inputs.First), counts.firstInputBytes)
 	if valbuf == nil {
 		return nil
 	}
@@ -2428,7 +2428,7 @@ func (p *CoinSparkTransfer) Encode(previousTransfer *CoinSparkTransfer, metadata
 		buf.Write(valbuf)
 	}
 
-	valbuf = WriteSmallEndianUnsigned(int64(p.inputs.count), counts.countInputsBytes)
+	valbuf = WriteSmallEndianUnsigned(int64(p.Inputs.Count), counts.countInputsBytes)
 	if valbuf == nil {
 		return nil
 	}
@@ -2436,7 +2436,7 @@ func (p *CoinSparkTransfer) Encode(previousTransfer *CoinSparkTransfer, metadata
 		buf.Write(valbuf)
 	}
 
-	valbuf = WriteSmallEndianUnsigned(int64(p.outputs.first), counts.firstOutputBytes)
+	valbuf = WriteSmallEndianUnsigned(int64(p.Outputs.First), counts.firstOutputBytes)
 	if valbuf == nil {
 		return nil
 	}
@@ -2444,7 +2444,7 @@ func (p *CoinSparkTransfer) Encode(previousTransfer *CoinSparkTransfer, metadata
 		buf.Write(valbuf)
 	}
 
-	valbuf = WriteSmallEndianUnsigned(int64(p.outputs.count), counts.countOutputsBytes)
+	valbuf = WriteSmallEndianUnsigned(int64(p.Outputs.Count), counts.countOutputsBytes)
 	if valbuf == nil {
 		return nil
 	}
@@ -2596,45 +2596,45 @@ func (p *CoinSparkTransfer) StringInner(headers bool) string {
 		buffer.WriteString("COINSPARK TRANSFER\n")
 	}
 
-	isDefaultRoute := p.assetRef.blockNum == COINSPARK_TRANSFER_BLOCK_NUM_DEFAULT_ROUTE
+	isDefaultRoute := p.AssetRef.BlockNum == COINSPARK_TRANSFER_BLOCK_NUM_DEFAULT_ROUTE
 	if isDefaultRoute {
 		buffer.WriteString("      Default route:\n")
 	} else {
-		buffer.WriteString(p.assetRef.StringInner(false))
-		buffer.WriteString(fmt.Sprintf("    Asset reference: %s\n", p.assetRef.Encode()))
+		buffer.WriteString(p.AssetRef.StringInner(false))
+		buffer.WriteString(fmt.Sprintf("    Asset reference: %s\n", p.AssetRef.Encode()))
 	}
 
-	if p.inputs.count > 0 {
-		if p.inputs.count > 1 {
-			buffer.WriteString(fmt.Sprintf("             Inputs: %d - %d (count %d)", p.inputs.first, p.inputs.first+p.inputs.count-1, p.inputs.count))
+	if p.Inputs.Count > 0 {
+		if p.Inputs.Count > 1 {
+			buffer.WriteString(fmt.Sprintf("             Inputs: %d - %d (count %d)", p.Inputs.First, p.Inputs.First+p.Inputs.Count-1, p.Inputs.Count))
 		} else {
-			buffer.WriteString(fmt.Sprintf("              Input: %d", p.inputs.first))
+			buffer.WriteString(fmt.Sprintf("              Input: %d", p.Inputs.First))
 		}
 	} else {
 		buffer.WriteString("             Inputs: none")
 	}
 
-	buffer.WriteString(fmt.Sprintf(" (small endian hex: first %s count %s)\n", UnsignedToSmallEndianHex(int64(p.inputs.first), 2), UnsignedToSmallEndianHex(int64(p.inputs.count), 2)))
+	buffer.WriteString(fmt.Sprintf(" (small endian hex: first %s count %s)\n", UnsignedToSmallEndianHex(int64(p.Inputs.First), 2), UnsignedToSmallEndianHex(int64(p.Inputs.Count), 2)))
 
-	if p.outputs.count > 0 {
-		if (p.outputs.count > 1) && !isDefaultRoute {
-			buffer.WriteString(fmt.Sprintf("            Outputs: %d - %d (count %d)", p.outputs.first, p.outputs.first+p.outputs.count-1, p.outputs.count))
+	if p.Outputs.Count > 0 {
+		if (p.Outputs.Count > 1) && !isDefaultRoute {
+			buffer.WriteString(fmt.Sprintf("            Outputs: %d - %d (count %d)", p.Outputs.First, p.Outputs.First+p.Outputs.Count-1, p.Outputs.Count))
 		} else {
-			buffer.WriteString(fmt.Sprintf("             Output: %d", p.outputs.first))
+			buffer.WriteString(fmt.Sprintf("             Output: %d", p.Outputs.First))
 		}
 	} else {
 		buffer.WriteString("            Outputs: none")
 	}
 
-	buffer.WriteString(fmt.Sprintf(" (small endian hex: first %s count %s)\n", UnsignedToSmallEndianHex(int64(p.outputs.first), 2), UnsignedToSmallEndianHex(int64(p.outputs.count), 2)))
+	buffer.WriteString(fmt.Sprintf(" (small endian hex: first %s count %s)\n", UnsignedToSmallEndianHex(int64(p.Outputs.First), 2), UnsignedToSmallEndianHex(int64(p.Outputs.Count), 2)))
 
 	if !isDefaultRoute {
-		buffer.WriteString(fmt.Sprintf("     Qty per output: %d (small endian hex %s", p.qtyPerOutput, UnsignedToSmallEndianHex(int64(p.qtyPerOutput), 8)))
+		buffer.WriteString(fmt.Sprintf("     Qty per output: %d (small endian hex %s", p.QtyPerOutput, UnsignedToSmallEndianHex(int64(p.QtyPerOutput), 8)))
 
-		quantityPerOutput, mantissa, exponent := QtyToMantissaExponent(p.qtyPerOutput, 0,
+		quantityPerOutput, mantissa, exponent := QtyToMantissaExponent(p.QtyPerOutput, 0,
 			COINSPARK_TRANSFER_QTY_FLOAT_MANTISSA_MAX, COINSPARK_TRANSFER_QTY_FLOAT_EXPONENT_MAX)
 
-		if quantityPerOutput == int64(p.qtyPerOutput) {
+		if quantityPerOutput == int64(p.QtyPerOutput) {
 			encodeQuantity := (exponent*COINSPARK_TRANSFER_QTY_FLOAT_EXPONENT_MULTIPLE + mantissa) & COINSPARK_TRANSFER_QTY_FLOAT_MASK
 			buffer.WriteString(fmt.Sprintf(", as float %s", UnsignedToSmallEndianHex(int64(encodeQuantity), COINSPARK_TRANSFER_QTY_FLOAT_LENGTH)))
 		}
@@ -2651,13 +2651,13 @@ func (p *CoinSparkTransfer) StringInner(headers bool) string {
 }
 
 func (p *CoinSparkTransferList) Clear() {
-	p.transfers = make([]CoinSparkTransfer, 0)
+	p.Transfers = make([]CoinSparkTransfer, 0)
 }
 
 func (p *CoinSparkTransferList) String() string {
 	buffer := bytes.Buffer{}
 	buffer.WriteString("COINSPARK TRANSFERS\n")
-	for i, t := range p.transfers {
+	for i, t := range p.Transfers {
 		if i > 0 {
 			buffer.WriteString("\n")
 		}
@@ -2669,7 +2669,7 @@ func (p *CoinSparkTransferList) String() string {
 }
 
 func (p *CoinSparkTransferList) IsValid() bool {
-	for _, t := range p.transfers {
+	for _, t := range p.Transfers {
 		if !t.IsValid() {
 			return false
 		}
@@ -2678,21 +2678,21 @@ func (p *CoinSparkTransferList) IsValid() bool {
 }
 
 func (p *CoinSparkTransferList) GroupOrdering() []int {
-	countTransfers := len(p.transfers)
+	countTransfers := len(p.Transfers)
 	ordering := make([]int, countTransfers)
 	transferUsed := make([]bool, countTransfers)
 
-	for orderIndex, _ := range p.transfers {
+	for orderIndex, _ := range p.Transfers {
 		bestTransferScore := 0
 		bestTransferIndex := -1
 		transferScore := 0
 
-		for transferIndex, _ := range p.transfers {
-			transfer := p.transfers[transferIndex]
+		for transferIndex, _ := range p.Transfers {
+			transfer := p.Transfers[transferIndex]
 			if !transferUsed[transferIndex] {
-				if transfer.assetRef.blockNum == COINSPARK_TRANSFER_BLOCK_NUM_DEFAULT_ROUTE {
+				if transfer.AssetRef.BlockNum == COINSPARK_TRANSFER_BLOCK_NUM_DEFAULT_ROUTE {
 					transferScore = 3 // top priority to default routes, which must be first in the encoded list
-				} else if orderIndex > 0 && transfer.assetRef.Match(&p.transfers[ordering[orderIndex-1]].assetRef) {
+				} else if orderIndex > 0 && transfer.AssetRef.Match(&p.Transfers[ordering[orderIndex-1]].AssetRef) {
 					transferScore = 2 // then next best is one which has same asset reference as previous
 				} else {
 					transferScore = 1 // otherwise any will do
@@ -2702,7 +2702,7 @@ func (p *CoinSparkTransferList) GroupOrdering() []int {
 					bestTransferScore = transferScore
 					bestTransferIndex = transferIndex
 				} else if transferScore == bestTransferScore { // otherwise give priority to "lower" asset references
-					if transfer.assetRef.Compare(&p.transfers[bestTransferIndex].assetRef) < 0 {
+					if transfer.AssetRef.Compare(&p.Transfers[bestTransferIndex].AssetRef) < 0 {
 						bestTransferIndex = transferIndex
 					}
 				}
@@ -2717,14 +2717,14 @@ func (p *CoinSparkTransferList) GroupOrdering() []int {
 }
 
 func (p *CoinSparkTransferList) Match(other *CoinSparkTransferList, strict bool) bool {
-	countTransfers := len(p.transfers)
-	if countTransfers != len(other.transfers) {
+	countTransfers := len(p.Transfers)
+	if countTransfers != len(other.Transfers) {
 		return false
 	}
 
 	if strict {
-		for i, t := range p.transfers {
-			if !other.transfers[i].Match(&t) {
+		for i, t := range p.Transfers {
+			if !other.Transfers[i].Match(&t) {
 				return false
 			}
 		}
@@ -2733,8 +2733,8 @@ func (p *CoinSparkTransferList) Match(other *CoinSparkTransferList, strict bool)
 	if !strict {
 		thisOrdering := p.GroupOrdering()
 		otherOrdering := other.GroupOrdering()
-		for i, _ := range p.transfers {
-			if !p.transfers[thisOrdering[i]].Match(&other.transfers[otherOrdering[i]]) {
+		for i, _ := range p.Transfers {
+			if !p.Transfers[thisOrdering[i]].Match(&other.Transfers[otherOrdering[i]]) {
 				return false
 			}
 		}
@@ -2751,13 +2751,13 @@ func (p *CoinSparkTransferList) CalcMinFee(countInputs int, outputsSatoshis []Co
 	}
 	transfersToCover := 0
 
-	for _, transfer := range p.transfers {
+	for _, transfer := range p.Transfers {
 
-		if (transfer.assetRef.blockNum != COINSPARK_TRANSFER_BLOCK_NUM_DEFAULT_ROUTE) && // don't count default routes
-			(transfer.inputs.count > 0) &&
-			(int(transfer.inputs.first) < countInputs) { // only count if at least one valid input index
-			outputIndex := COINSPARK_MAX(int(transfer.outputs.first), 0)
-			lastOutputIndex := COINSPARK_MIN(int(transfer.outputs.first+transfer.outputs.count), countOutputs) - 1
+		if (transfer.AssetRef.BlockNum != COINSPARK_TRANSFER_BLOCK_NUM_DEFAULT_ROUTE) && // don't count default routes
+			(transfer.Inputs.Count > 0) &&
+			(int(transfer.Inputs.First) < countInputs) { // only count if at least one valid input index
+			outputIndex := COINSPARK_MAX(int(transfer.Outputs.First), 0)
+			lastOutputIndex := COINSPARK_MIN(int(transfer.Outputs.First+transfer.Outputs.Count), countOutputs) - 1
 
 			for i := outputIndex; i <= lastOutputIndex; i++ {
 				if outputsRegular[i] {
@@ -2792,15 +2792,15 @@ func (p *CoinSparkTransferList) Apply(assetRef *CoinSparkAssetRef, genesis *Coin
 	outputBalances := make([]CoinSparkAssetQty, countOutputs)
 
 	// Perform explicit transfers (i.e. not default routes)
-	for _, transfer := range p.transfers {
-		if assetRef.Match(&transfer.assetRef) {
-			inputIndex := COINSPARK_MAX(int(transfer.inputs.first), 0)
-			outputIndex := COINSPARK_MAX(int(transfer.outputs.first), 0)
-			lastInputIndex := COINSPARK_MIN(inputIndex+int(transfer.inputs.count), countInputs) - 1
-			lastOutputIndex := COINSPARK_MIN(outputIndex+int(transfer.outputs.count), countOutputs) - 1
+	for _, transfer := range p.Transfers {
+		if assetRef.Match(&transfer.AssetRef) {
+			inputIndex := COINSPARK_MAX(int(transfer.Inputs.First), 0)
+			outputIndex := COINSPARK_MAX(int(transfer.Outputs.First), 0)
+			lastInputIndex := COINSPARK_MIN(inputIndex+int(transfer.Inputs.Count), countInputs) - 1
+			lastOutputIndex := COINSPARK_MIN(outputIndex+int(transfer.Outputs.Count), countOutputs) - 1
 			for outputIndex <= lastOutputIndex {
 				if outputsRegular[outputIndex] == true {
-					transferRemaining := transfer.qtyPerOutput
+					transferRemaining := transfer.QtyPerOutput
 					for inputIndex <= lastInputIndex {
 						transferQuantity := COINSPARK_MINASSETQTY(transferRemaining, inputBalances[inputIndex])
 						if transferQuantity > 0 {
@@ -2872,13 +2872,13 @@ func (p *CoinSparkTransferList) GetDefaultRouteMap(countInputs int, outputsRegul
 	}
 
 	// Apply any default route transfers in reverse order (since early ones take precedence)
-	for i := len(p.transfers) - 1; i >= 0; i-- {
-		transfer := p.transfers[i]
-		if transfer.assetRef.blockNum == COINSPARK_TRANSFER_BLOCK_NUM_DEFAULT_ROUTE {
-			outputIndex := int(transfer.outputs.first)
+	for i := len(p.Transfers) - 1; i >= 0; i-- {
+		transfer := p.Transfers[i]
+		if transfer.AssetRef.BlockNum == COINSPARK_TRANSFER_BLOCK_NUM_DEFAULT_ROUTE {
+			outputIndex := int(transfer.Outputs.First)
 			if (outputIndex >= 0) && (outputIndex < countOutputs) {
-				inputIndex := COINSPARK_MAX(int(transfer.inputs.first), 0)
-				lastInputIndex := COINSPARK_MIN(inputIndex+int(transfer.inputs.count), countInputs) - 1
+				inputIndex := COINSPARK_MAX(int(transfer.Inputs.First), 0)
+				lastInputIndex := COINSPARK_MIN(inputIndex+int(transfer.Inputs.Count), countInputs) - 1
 
 				for inputIndex <= lastInputIndex {
 					inputDefaultOutput[inputIndex] = outputIndex
@@ -2901,7 +2901,7 @@ func (p *CoinSparkTransferList) Decode(metadataIn []byte, countInputs int, count
 
 	// Iterate over list
 
-	p.transfers = make([]CoinSparkTransfer, 0)
+	p.Transfers = make([]CoinSparkTransfer, 0)
 	var previousTransfer *CoinSparkTransfer
 	//previousTransfer = nil
 
@@ -2910,7 +2910,7 @@ func (p *CoinSparkTransferList) Decode(metadataIn []byte, countInputs int, count
 		transferBytesUsed := transfer.Decode(metadata, previousTransfer, countInputs, countOutputs)
 
 		if transferBytesUsed > 0 {
-			p.transfers = append(p.transfers, transfer)
+			p.Transfers = append(p.Transfers, transfer)
 			metadata = metadata[transferBytesUsed:]
 			previousTransfer = &transfer
 		} else {
@@ -2918,7 +2918,7 @@ func (p *CoinSparkTransferList) Decode(metadataIn []byte, countInputs int, count
 		}
 	}
 	// Return count
-	return len(p.transfers)
+	return len(p.Transfers)
 }
 
 func (p *CoinSparkTransferList) Encode(countInputs int, countOutputs int, metadataMaxLen int) []byte {
@@ -2931,12 +2931,12 @@ func (p *CoinSparkTransferList) Encode(countInputs int, countOutputs int, metada
 
 	// Encode each transfer, grouping by asset reference, but preserving original order otherwise
 	ordering := p.GroupOrdering()
-	countTransfers := len(p.transfers)
+	countTransfers := len(p.Transfers)
 	var previousTransfer *CoinSparkTransfer
 	previousTransfer = nil
 
 	for transferIndex := 0; transferIndex < countTransfers; transferIndex++ {
-		thisTransfer := p.transfers[ordering[transferIndex]]
+		thisTransfer := p.Transfers[ordering[transferIndex]]
 
 		written := thisTransfer.Encode(previousTransfer, metadataMaxLen-buf.Len(), countInputs, countOutputs)
 		if written == nil {
@@ -2959,65 +2959,65 @@ func (p *CoinSparkTransferList) Encode(countInputs int, countOutputs int, metada
 }
 
 func (p *CoinSparkMessage) String() string {
-	hostPathMetadata := EncodeDomainAndOrPath(p.serverHost, p.useHttps, p.serverPath, p.usePrefix, true)
+	hostPathMetadata := EncodeDomainAndOrPath(p.ServerHost, p.UseHttps, p.ServerPath, p.UsePrefix, true)
 	urlString := p.CalcServerURL()
 	buffer := bytes.Buffer{}
 	buffer.WriteString("COINSPARK MESSAGE\n")
-	buffer.WriteString(fmt.Sprintf("    Server URL: %s (length %d+%d encoded %s length %d)\n", urlString, len(p.serverHost), len(p.serverPath), strings.ToUpper(hex.EncodeToString(hostPathMetadata)), len(hostPathMetadata)))
+	buffer.WriteString(fmt.Sprintf("    Server URL: %s (length %d+%d encoded %s length %d)\n", urlString, len(p.ServerHost), len(p.ServerPath), strings.ToUpper(hex.EncodeToString(hostPathMetadata)), len(hostPathMetadata)))
 	buffer.WriteString("Public message: ")
-	if p.isPublic {
+	if p.IsPublic {
 		buffer.WriteString("yes\n")
 	} else {
 		buffer.WriteString("no\n")
 	}
-	for _, outputRange := range p.outputRanges {
-		if outputRange.count > 0 {
-			if outputRange.count > 1 {
-				buffer.WriteString(fmt.Sprintf("       Outputs: %d - %d (count %d)", outputRange.first, outputRange.first+outputRange.count-1, outputRange.count))
+	for _, outputRange := range p.OutputRanges {
+		if outputRange.Count > 0 {
+			if outputRange.Count > 1 {
+				buffer.WriteString(fmt.Sprintf("       Outputs: %d - %d (count %d)", outputRange.First, outputRange.First+outputRange.Count-1, outputRange.Count))
 			} else {
-				buffer.WriteString(fmt.Sprintf("        Output: %d", outputRange.first))
+				buffer.WriteString(fmt.Sprintf("        Output: %d", outputRange.First))
 			}
 		} else {
 			buffer.WriteString("       Outputs: none")
 		}
 
-		buffer.WriteString(fmt.Sprintf(" (small endian hex: first %s count %s)\n", UnsignedToSmallEndianHex(int64(outputRange.first), 2), UnsignedToSmallEndianHex(int64(outputRange.count), 2)))
+		buffer.WriteString(fmt.Sprintf(" (small endian hex: first %s count %s)\n", UnsignedToSmallEndianHex(int64(outputRange.First), 2), UnsignedToSmallEndianHex(int64(outputRange.Count), 2)))
 	}
 
-	buffer.WriteString(fmt.Sprintf("  Message hash: %s (length %d)\n", strings.ToUpper(hex.EncodeToString(p.hash[:p.hashLen])), p.hashLen))
+	buffer.WriteString(fmt.Sprintf("  Message hash: %s (length %d)\n", strings.ToUpper(hex.EncodeToString(p.Hash[:p.HashLen])), p.HashLen))
 	buffer.WriteString("END COINSPARK MESSAGE\n\n")
 
 	return buffer.String()
 }
 
 func (p *CoinSparkMessage) IsValid() bool {
-	if len(p.serverHost) > COINSPARK_MESSAGE_SERVER_HOST_MAX_LEN {
+	if len(p.ServerHost) > COINSPARK_MESSAGE_SERVER_HOST_MAX_LEN {
 		return false
 	}
 
-	if len(p.serverPath) > COINSPARK_MESSAGE_SERVER_PATH_MAX_LEN {
+	if len(p.ServerPath) > COINSPARK_MESSAGE_SERVER_PATH_MAX_LEN {
 		return false
 	}
 
-	if len(p.hash) < p.hashLen {
+	if len(p.Hash) < p.HashLen {
 		// check we have at least as much data as specified by self.hashLen
 		return false
 	}
 
-	if p.hashLen < COINSPARK_MESSAGE_HASH_MIN_LEN || p.hashLen > COINSPARK_MESSAGE_HASH_MAX_LEN {
+	if p.HashLen < COINSPARK_MESSAGE_HASH_MIN_LEN || p.HashLen > COINSPARK_MESSAGE_HASH_MAX_LEN {
 		return false
 	}
 
-	if !p.isPublic && len(p.outputRanges) == 0 {
+	if !p.IsPublic && len(p.OutputRanges) == 0 {
 		// public or aimed at some outputs at least
 		return false
 	}
 
-	if len(p.outputRanges) > COINSPARK_MESSAGE_MAX_IO_RANGES {
+	if len(p.OutputRanges) > COINSPARK_MESSAGE_MAX_IO_RANGES {
 		return false
 	}
 
-	for _, outputRange := range p.outputRanges {
+	for _, outputRange := range p.OutputRanges {
 		if !outputRange.IsValid() {
 			return false
 		}
@@ -3028,16 +3028,16 @@ func (p *CoinSparkMessage) IsValid() bool {
 }
 
 func (p *CoinSparkMessage) Match(other *CoinSparkMessage, strict bool) bool {
-	hashCompareLen := COINSPARK_MIN(p.hashLen, other.hashLen)
+	hashCompareLen := COINSPARK_MIN(p.HashLen, other.HashLen)
 	hashCompareLen = COINSPARK_MIN(hashCompareLen, COINSPARK_MESSAGE_HASH_MAX_LEN)
 
 	var thisRanges, otherRanges []CoinSparkIORange
 	if strict {
-		thisRanges = p.outputRanges
-		otherRanges = other.outputRanges
+		thisRanges = p.OutputRanges
+		otherRanges = other.OutputRanges
 	} else {
-		thisRanges = NormalizeIORanges(p.outputRanges)
-		otherRanges = NormalizeIORanges(other.outputRanges)
+		thisRanges = NormalizeIORanges(p.OutputRanges)
+		otherRanges = NormalizeIORanges(other.OutputRanges)
 	}
 
 	if len(thisRanges) != len(otherRanges) {
@@ -3050,12 +3050,12 @@ func (p *CoinSparkMessage) Match(other *CoinSparkMessage, strict bool) bool {
 		}
 	}
 
-	return (p.useHttps == other.useHttps &&
-		strings.ToLower(p.serverHost) == strings.ToLower(other.serverHost) &&
-		p.usePrefix == other.usePrefix &&
-		strings.ToLower(p.serverPath) == strings.ToLower(other.serverPath) &&
-		p.isPublic == other.isPublic &&
-		0 == bytes.Compare(p.hash[:hashCompareLen], other.hash[:hashCompareLen]))
+	return (p.UseHttps == other.UseHttps &&
+		strings.ToLower(p.ServerHost) == strings.ToLower(other.ServerHost) &&
+		p.UsePrefix == other.UsePrefix &&
+		strings.ToLower(p.ServerPath) == strings.ToLower(other.ServerPath) &&
+		p.IsPublic == other.IsPublic &&
+		0 == bytes.Compare(p.Hash[:hashCompareLen], other.Hash[:hashCompareLen]))
 
 }
 
@@ -3072,7 +3072,7 @@ func (p *CoinSparkMessage) Encode(countOutputs int, metadataMaxLen int) []byte {
 
 	// Server host and path
 
-	written := EncodeDomainAndOrPath(p.serverHost, p.useHttps, p.serverPath, p.usePrefix, true)
+	written := EncodeDomainAndOrPath(p.ServerHost, p.UseHttps, p.ServerPath, p.UsePrefix, true)
 	if written == nil {
 		return nil
 	}
@@ -3080,19 +3080,19 @@ func (p *CoinSparkMessage) Encode(countOutputs int, metadataMaxLen int) []byte {
 
 	// Output ranges
 
-	if p.isPublic {
+	if p.IsPublic {
 		//add public indicator first
 		var packing byte
 		packing = COINSPARK_OUTPUTS_TYPE_EXTEND | COINSPARK_OUTPUTS_TYPE_EXTEND
-		if len(p.outputRanges) > 0 {
+		if len(p.OutputRanges) > 0 {
 			packing = packing | COINSPARK_OUTPUTS_MORE_FLAG
 		}
 		buf.WriteByte(packing)
 	}
 
-	for index := 0; index < len(p.outputRanges); index++ {
+	for index := 0; index < len(p.OutputRanges); index++ {
 		// other output ranges
-		outputRange := p.outputRanges[index]
+		outputRange := p.OutputRanges[index]
 
 		success, packingResult := GetOutputRangePacking(outputRange, countOutputs)
 		if success == false {
@@ -3103,23 +3103,23 @@ func (p *CoinSparkMessage) Encode(countOutputs int, metadataMaxLen int) []byte {
 
 		packing := packingResult.packing
 
-		if (index + 1) < len(p.outputRanges) {
+		if (index + 1) < len(p.OutputRanges) {
 			packing |= COINSPARK_OUTPUTS_MORE_FLAG
 		}
 		buf.WriteByte(byte(packing))
 
-		hexString := UnsignedToSmallEndianHex(int64(outputRange.first), int(packingResult.firstBytes))
+		hexString := UnsignedToSmallEndianHex(int64(outputRange.First), int(packingResult.firstBytes))
 		hexBytes, _ := hex.DecodeString(hexString)
 		buf.Write(hexBytes)
 
 		// The number of outputs, if necessary
-		hexString = UnsignedToSmallEndianHex(int64(outputRange.count), int(packingResult.countBytes))
+		hexString = UnsignedToSmallEndianHex(int64(outputRange.Count), int(packingResult.countBytes))
 		hexBytes, _ = hex.DecodeString(hexString)
 		buf.Write(hexBytes)
 	}
 
 	// Message hash
-	buf.Write(p.hash[:p.hashLen])
+	buf.Write(p.Hash[:p.HashLen])
 
 	// Check the total length is within the specified limit
 
@@ -3144,14 +3144,14 @@ func (p *CoinSparkMessage) Decode(buffer []byte, countOutputs int) bool {
 	}
 
 	metadata = metadata[decoded.decodedChars:]
-	p.useHttps = decoded.useHttps
-	p.serverHost = decoded.domainName
-	p.usePrefix = decoded.usePrefix
-	p.serverPath = decoded.pagePath
+	p.UseHttps = decoded.useHttps
+	p.ServerHost = decoded.domainName
+	p.UsePrefix = decoded.usePrefix
+	p.ServerPath = decoded.pagePath
 
 	// Output ranges
-	p.isPublic = false
-	p.outputRanges = make([]CoinSparkIORange, 0)
+	p.IsPublic = false
+	p.OutputRanges = make([]CoinSparkIORange, 0)
 
 	var outputRange CoinSparkIORange
 
@@ -3173,11 +3173,11 @@ func (p *CoinSparkMessage) Decode(buffer []byte, countOutputs int) bool {
 		packingValue := packing & COINSPARK_OUTPUTS_VALUE_MASK
 
 		if (packingType == COINSPARK_OUTPUTS_TYPE_EXTEND) && (packingValue == COINSPARK_PACKING_EXTEND_PUBLIC) {
-			p.isPublic = true
+			p.IsPublic = true
 			//special case for public messages
 		} else {
 			// Create a new output range
-			if len(p.outputRanges) >= COINSPARK_MESSAGE_MAX_IO_RANGES {
+			if len(p.OutputRanges) >= COINSPARK_MESSAGE_MAX_IO_RANGES {
 				// too many output ranges
 				return false
 			}
@@ -3190,14 +3190,14 @@ func (p *CoinSparkMessage) Decode(buffer []byte, countOutputs int) bool {
 			if packingType == COINSPARK_OUTPUTS_TYPE_SINGLE {
 				// inline single input
 				outputRange = CoinSparkIORange{}
-				outputRange.first = CoinSparkIOIndex(packingValue)
-				outputRange.count = 1
+				outputRange.First = CoinSparkIOIndex(packingValue)
+				outputRange.Count = 1
 
 			} else if packingType == COINSPARK_OUTPUTS_TYPE_FIRST {
 				// inline first few outputs
 				outputRange = CoinSparkIORange{}
-				outputRange.first = 0
-				outputRange.count = CoinSparkIOIndex(packingValue)
+				outputRange.First = 0
+				outputRange.Count = CoinSparkIOIndex(packingValue)
 
 			} else if packingType == COINSPARK_OUTPUTS_TYPE_EXTEND {
 				// we'll be taking additional bytes
@@ -3221,26 +3221,26 @@ func (p *CoinSparkMessage) Decode(buffer []byte, countOutputs int) bool {
 			if !success {
 				return false
 			} else if firstBytes > 0 {
-				outputRange.first = CoinSparkIOIndex(v)
+				outputRange.First = CoinSparkIOIndex(v)
 			}
 
 			success, v = ShiftLittleEndianBytesToInt(&metadata, countBytes)
 			if !success {
 				return false
 			} else if countBytes > 0 {
-				outputRange.count = CoinSparkIOIndex(v)
+				outputRange.Count = CoinSparkIOIndex(v)
 			}
 
 			// Add on the new output range
 
-			p.outputRanges = append(p.outputRanges, outputRange)
+			p.OutputRanges = append(p.OutputRanges, outputRange)
 
 		}
 	}
 
 	// Message hash
-	p.hashLen = COINSPARK_MIN(len(metadata), COINSPARK_MESSAGE_HASH_MAX_LEN)
-	p.hash = metadata[:p.hashLen] // insufficient length will be caught by isValid()
+	p.HashLen = COINSPARK_MIN(len(metadata), COINSPARK_MESSAGE_HASH_MAX_LEN)
+	p.Hash = metadata[:p.HashLen] // insufficient length will be caught by isValid()
 
 	// Return validity
 	return p.IsValid()
@@ -3248,13 +3248,13 @@ func (p *CoinSparkMessage) Decode(buffer []byte, countOutputs int) bool {
 }
 
 func (p *CoinSparkMessage) GetHashLen() int {
-	return p.hashLen
+	return p.HashLen
 }
 
 func (p *CoinSparkMessage) CalcHashLen(countOutputs int, metadataMaxLen int) int {
 	hashLen := metadataMaxLen - COINSPARK_METADATA_IDENTIFIER_LEN - 1
-	hostPathLen := len(p.serverPath) + 1
-	theIP := net.ParseIP(p.serverHost)
+	hostPathLen := len(p.ServerPath) + 1
+	theIP := net.ParseIP(p.ServerHost)
 	if theIP != nil {
 		theIP = theIP.To4() // could return 16 byte slice
 	}
@@ -3265,17 +3265,17 @@ func (p *CoinSparkMessage) CalcHashLen(countOutputs int, metadataMaxLen int) int
 		}
 	} else {
 		hashLen -= 1 // packing
-		shortDomainName, _ := ShrinkLowerDomainName(p.serverHost)
+		shortDomainName, _ := ShrinkLowerDomainName(p.ServerHost)
 		hostPathLen += len(shortDomainName) + 1
 	}
 
 	hashLen -= 2 * int((hostPathLen+2)/3) // uses integer arithmetic
 
-	if p.isPublic {
+	if p.IsPublic {
 		hashLen -= 1
 	}
 
-	for _, outputRange := range p.outputRanges {
+	for _, outputRange := range p.OutputRanges {
 		success, packingResult := GetOutputRangePacking(outputRange, countOutputs)
 		if success {
 			hashLen -= 1 + packingResult.firstBytes + packingResult.countBytes
@@ -3287,18 +3287,18 @@ func (p *CoinSparkMessage) CalcHashLen(countOutputs int, metadataMaxLen int) int
 
 func (p *CoinSparkMessage) CalcServerURL() string {
 	buffer := bytes.Buffer{}
-	if p.useHttps {
+	if p.UseHttps {
 		buffer.WriteString("https://")
 	} else {
 		buffer.WriteString("http://")
 	}
-	buffer.WriteString(p.serverHost)
+	buffer.WriteString(p.ServerHost)
 	buffer.WriteString("/")
-	if p.usePrefix {
+	if p.UsePrefix {
 		buffer.WriteString("coinspark/")
 	}
-	if len(p.serverPath) > 0 {
-		buffer.WriteString(p.serverPath)
+	if len(p.ServerPath) > 0 {
+		buffer.WriteString(p.ServerPath)
 		buffer.WriteString("/")
 	}
 	return strings.ToLower(buffer.String())
@@ -3331,23 +3331,23 @@ func NormalizeIORanges(inRanges []CoinSparkIORange) []CoinSparkIORange {
 
 		for rangeIndex := 0; rangeIndex < countRanges; rangeIndex++ {
 			if rangeUsed[rangeIndex] == false {
-				if lowestRangeIndex == -1 || inRanges[rangeIndex].first < lowestRangeFirst {
-					lowestRangeFirst = inRanges[rangeIndex].first
+				if lowestRangeIndex == -1 || inRanges[rangeIndex].First < lowestRangeFirst {
+					lowestRangeFirst = inRanges[rangeIndex].First
 					lowestRangeIndex = CoinSparkIOIndex(rangeIndex)
 				}
 			}
 		}
 
-		if orderIndex > 0 && inRanges[lowestRangeIndex].first <= lastRangeEnd {
+		if orderIndex > 0 && inRanges[lowestRangeIndex].First <= lastRangeEnd {
 			// we can combine two adjacent ranges
 			countRemoved += 1
-			thisRangeEnd := inRanges[lowestRangeIndex].first + inRanges[lowestRangeIndex].count
-			outRanges[orderIndex-countRemoved].count = CoinSparkIOIndex(COINSPARK_MAX(int(lastRangeEnd), int(thisRangeEnd))) - outRanges[orderIndex-countRemoved].first
+			thisRangeEnd := inRanges[lowestRangeIndex].First + inRanges[lowestRangeIndex].Count
+			outRanges[orderIndex-countRemoved].Count = CoinSparkIOIndex(COINSPARK_MAX(int(lastRangeEnd), int(thisRangeEnd))) - outRanges[orderIndex-countRemoved].First
 		} else {
 			outRanges = append(outRanges, inRanges[lowestRangeIndex])
 		}
 
-		lastRangeEnd = outRanges[orderIndex-countRemoved].first + outRanges[orderIndex-countRemoved].count
+		lastRangeEnd = outRanges[orderIndex-countRemoved].First + outRanges[orderIndex-countRemoved].Count
 		rangeUsed[lowestRangeIndex] = true
 	}
 	return outRanges
@@ -3360,12 +3360,12 @@ func GetOutputRangePacking(outputRange CoinSparkIORange, countOutputs int) (bool
 	firstBytes := 0
 	countBytes := 0
 
-	if packingOptions["_1_0_BYTE"] && (outputRange.first <= COINSPARK_OUTPUTS_VALUE_MAX) {
+	if packingOptions["_1_0_BYTE"] && (outputRange.First <= COINSPARK_OUTPUTS_VALUE_MAX) {
 		//# inline single output
-		packing = COINSPARK_OUTPUTS_TYPE_SINGLE | (int(outputRange.first) & COINSPARK_OUTPUTS_VALUE_MASK)
-	} else if packingOptions["_0_1_BYTE"] && (outputRange.count <= COINSPARK_OUTPUTS_VALUE_MAX) {
+		packing = COINSPARK_OUTPUTS_TYPE_SINGLE | (int(outputRange.First) & COINSPARK_OUTPUTS_VALUE_MASK)
+	} else if packingOptions["_0_1_BYTE"] && (outputRange.Count <= COINSPARK_OUTPUTS_VALUE_MAX) {
 		// inline first few outputs
-		packing = COINSPARK_OUTPUTS_TYPE_FIRST | (int(outputRange.count) & COINSPARK_OUTPUTS_VALUE_MASK)
+		packing = COINSPARK_OUTPUTS_TYPE_FIRST | (int(outputRange.Count) & COINSPARK_OUTPUTS_VALUE_MASK)
 	} else {
 		// we'll be taking additional bytes
 		success, packingExtend := EncodePackingExtend(packingOptions)
@@ -3388,11 +3388,11 @@ func GetOutputRangePacking(outputRange CoinSparkIORange, countOutputs int) (bool
 func GetPackingOptions(previousRange *CoinSparkIORange, r *CoinSparkIORange, countInputsOutputs int, forMessages bool) map[string]bool {
 	packingOptions := map[string]bool{}
 
-	firstZero := (r.first == 0)
-	firstByte := (r.first <= COINSPARK_UNSIGNED_BYTE_MAX)
-	first2Bytes := (r.first <= COINSPARK_UNSIGNED_2_BYTES_MAX)
-	countOne := (r.count == 1)
-	countByte := (r.count <= COINSPARK_UNSIGNED_BYTE_MAX)
+	firstZero := (r.First == 0)
+	firstByte := (r.First <= COINSPARK_UNSIGNED_BYTE_MAX)
+	first2Bytes := (r.First <= COINSPARK_UNSIGNED_2_BYTES_MAX)
+	countOne := (r.Count == 1)
+	countByte := (r.Count <= COINSPARK_UNSIGNED_BYTE_MAX)
 
 	if forMessages {
 		packingOptions["_0P"] = false
@@ -3400,11 +3400,11 @@ func GetPackingOptions(previousRange *CoinSparkIORange, r *CoinSparkIORange, cou
 		packingOptions["_0_1_BYTE"] = firstZero && countByte
 	} else {
 		if previousRange != nil {
-			packingOptions["_0P"] = (r.first == previousRange.first) && (r.count == previousRange.count)
-			packingOptions["_1S"] = (r.first == (previousRange.first + previousRange.count)) && countOne
+			packingOptions["_0P"] = (r.First == previousRange.First) && (r.Count == previousRange.Count)
+			packingOptions["_1S"] = (r.First == (previousRange.First + previousRange.Count)) && countOne
 		} else {
 			packingOptions["_0P"] = firstZero && countOne
-			packingOptions["_1S"] = (r.first == 1) && countOne
+			packingOptions["_1S"] = (r.First == 1) && countOne
 		}
 		packingOptions["_0_1_BYTE"] = false // this option not used for transfers
 	}
@@ -3413,8 +3413,8 @@ func GetPackingOptions(previousRange *CoinSparkIORange, r *CoinSparkIORange, cou
 	packingOptions["_2_0_BYTES"] = first2Bytes && countOne
 	packingOptions["_1_1_BYTES"] = firstByte && countByte
 	packingOptions["_2_1_BYTES"] = first2Bytes && countByte
-	packingOptions["_2_2_BYTES"] = first2Bytes && (r.count <= COINSPARK_UNSIGNED_2_BYTES_MAX)
-	packingOptions["_ALL"] = firstZero && (int(r.count) >= countInputsOutputs)
+	packingOptions["_2_2_BYTES"] = first2Bytes && (r.Count <= COINSPARK_UNSIGNED_2_BYTES_MAX)
+	packingOptions["_ALL"] = firstZero && (int(r.Count) >= countInputsOutputs)
 
 	return packingOptions
 
