@@ -1278,10 +1278,6 @@ func (p *CoinSparkGenesis) Clear() {
 	p.AssetHashLen = 0
 }
 
-func (p *CoinSparkGenesis) GetHashLen() int {
-	return p.AssetHashLen
-}
-
 func (p *CoinSparkGenesis) GetChargeFlat() CoinSparkAssetQty {
 	x := MantissaExponentToQty(p.ChargeFlatMantissa, p.ChargeBasisPoints)
 	return CoinSparkAssetQty(x)
@@ -3245,10 +3241,6 @@ func (p *CoinSparkMessage) Decode(buffer []byte, countOutputs int) bool {
 	// Return validity
 	return p.IsValid()
 
-}
-
-func (p *CoinSparkMessage) GetHashLen() int {
-	return p.HashLen
 }
 
 func (p *CoinSparkMessage) CalcHashLen(countOutputs int, metadataMaxLen int) int {
