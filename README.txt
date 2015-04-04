@@ -1,6 +1,6 @@
 ABOUT
 -----
-This is a third-party port of the CoinSpark library v2.1 to Go.
+This is an independent port of the CoinSpark library v2.1 to Go.
 
 The CoinSpark libraries help you integrate support for the CoinSpark protocol into
 your wallet, or any other tool or service.
