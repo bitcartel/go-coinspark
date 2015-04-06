@@ -28,6 +28,8 @@ import (
 	//"bytes"
 	//"encoding/hex"
 	"fmt"
+	//"bytes"
+	"crypto/rand"
 	//"os"
 	//"strconv"
 	//"strings"
@@ -98,6 +100,147 @@ func ProcessTransaction(scriptPubKeys []string, countInputs int) {
 	}
 }
 
+func EncodeMetaDataToHex(metadata []byte) string {
+	fmt.Println("\nEncoding CoinSpark metadata in a script...\n")
+
+	// first get metadata from the encode() method of a CoinSparkGenesis, CoinSparkTransferList
+	// or CoinSparkPaymentRef object, or the CoinSparkBase.metadataAppend() method.
+
+	var scriptPubKey string
+
+	if metadata != nil {
+		scriptPubKey = coinspark.MetadataToScript(metadata, true)
+
+		if scriptPubKey != "" {
+			fmt.Println("Script: ", scriptPubKey)
+		} else {
+			fmt.Println("Metadata encode failed!")
+		}
+	} else {
+		// handle the error
+	}
+
+	return scriptPubKey
+}
+
+func CreateGenesis() coinspark.CoinSparkGenesis {
+	fmt.Println("\nCreating and encoding genesis metadata...\n")
+
+	genesis := coinspark.CoinSparkGenesis{}
+
+	genesis.SetQty(1234567, 1) // 1234567 units rounded up
+	//actualQty:=genesis.GetQty() // can check final quantity assigned
+
+	genesis.SetChargeFlat(4321, 0) // 4321 units rounded to nearest
+	//actualChargeFlat:=genesis.GetChargeFlat(); // can check final flat charge assigned
+
+	genesis.ChargeBasisPoints = 10 // additional 0.1% per payment
+
+	genesis.UseHttps = false
+	genesis.DomainName = "www.example.com"
+	genesis.UsePrefix = true
+	genesis.PagePath = "usd-1"
+
+	assetHashLen := genesis.CalcHashLen(40) // 40 byte limit for OP_RETURN
+	genesis.AssetHashLen = assetHashLen
+
+	assetHash := make([]byte, assetHashLen)
+	rand.Read(assetHash) // random hash in example
+	genesis.AssetHash = assetHash
+
+	err, metadata := genesis.Encode(40) // 40 byte limit for OP_RETURNs
+
+	if metadata != nil {
+		// use coinspark.MetadataToScript() to embed metadata in an output script
+	} else if err != nil {
+		// handle error
+	}
+
+	return genesis
+}
+
+func CreateMessage() coinspark.CoinSparkMessage {
+	fmt.Println("\nCreating and encoding message metadata...\n")
+
+	message := coinspark.CoinSparkMessage{}
+
+	message.UseHttps = true
+	message.ServerHost = "123.45.67.89"
+	message.UsePrefix = false
+	message.ServerPath = "msg"
+	message.IsPublic = false
+	message.OutputRanges = []coinspark.CoinSparkIORange{coinspark.CoinSparkIORange{0, 2}} // message is for outputs 0 and 1
+
+	countOutputs := 3                                // 3 outputs for this transaction
+	hashLen := message.CalcHashLen(countOutputs, 40) // 40 byte limit for OP_RETURN
+	message.HashLen = hashLen
+
+	hash := make([]byte, hashLen)
+	rand.Read(hash) // random hash in example
+	message.Hash = hash
+
+	metadata := message.Encode(countOutputs, 40) // 40 byte limit for OP_RETURNs
+
+	if metadata != nil {
+		// use coinspark.MetadataToScript() to embed metadata in an output script
+	} else {
+		// handle error
+	}
+
+	return message
+}
+
+func CreateTransferList() coinspark.CoinSparkTransferList {
+	fmt.Println("\nCreating and encoding transfer metadata...\n")
+
+	countInputs := 3
+	countOutputs := 5
+	transferList := coinspark.CoinSparkTransferList{}
+	transfers := []coinspark.CoinSparkTransfer{}
+
+	transfer := coinspark.CoinSparkTransfer{}
+	assetRef := coinspark.CoinSparkAssetRef{}
+	assetRef.Decode("456789-65432-23456")
+	transfer.AssetRef = assetRef
+	transfer.Inputs = coinspark.CoinSparkIORange{0, 2}  // transfer from inputs 0 and 1
+	transfer.Outputs = coinspark.CoinSparkIORange{0, 1} // transfer to outputs 0 only
+	transfer.QtyPerOutput = 123
+	transfers = append(transfers, transfer)
+
+	transfer = coinspark.CoinSparkTransfer{}
+	transfer.AssetRef = transfers[0].AssetRef
+	transfer.Inputs = coinspark.CoinSparkIORange{2, 1}  // transfer from input 2 only
+	transfer.Outputs = coinspark.CoinSparkIORange{1, 3} // transfer to outputs 1, 2 and 3
+	transfer.QtyPerOutput = 456
+	transfers = append(transfers, transfer)
+	transferList.Transfers = transfers
+
+	metadata := transferList.Encode(countInputs, countOutputs, 40) // 40 byte limit for OP_RETURNs
+
+	if metadata != nil {
+		// use coinspark.MetadataToScript() to embed metadata in an output script
+	} else {
+		// handle error
+	}
+
+	return transferList
+}
+
+func CreatePaymentRef() coinspark.CoinSparkPaymentRef {
+	fmt.Println("\nCreating and encoding payment reference metadata...\n")
+
+	paymentRef := coinspark.CoinSparkPaymentRef{}
+	paymentRef.Randomize()            // randomizes the payment reference
+	metadata := paymentRef.Encode(40) // assume 40 byte limit for OP_RETURNs
+
+	if metadata != nil {
+		// use coinspark.MetadataToScript() to embed metadata in an output script
+	} else {
+		// handle error
+	}
+	return paymentRef
+}
+
 func main() {
 	CreateCoinSparkAddress()
 	DecodeCoinSparkAddress()
@@ -105,5 +248,20 @@ func main() {
 	ProcessTransaction([]string{"6A2853504B6750A4AE00F454956DF4C7D6DE7BF8192486006A4ADF65B048BF847FE26D70588E9FA828D5"}, 15856)
 	ProcessTransaction([]string{"abc", "6A2053504B743F282321E438188C4B381807227C10812B47920642B32E12417D8279", "def"}, 59364)
 	ProcessTransaction([]string{"6A2553504B0872876AAE4C1CC00A747A3E6F1BC14CD7752DA0D507BD05ED903A1C8407CCE38087"}, 1925)
+
+	metadataTransfers := coinspark.ScriptToMetadata("6A2053504B743F282321E438188C4B381807227C10812B47920642B32E12417D8279", true)
+	EncodeMetaDataToHex(metadataTransfers)
+
+	genesis := CreateGenesis()
+	fmt.Println(genesis.String())
+
+	message := CreateMessage()
+	fmt.Println(message.String())
+
+	transferList := CreateTransferList()
+	fmt.Println(transferList.String())
+
+	paymentRef := CreatePaymentRef()
+	fmt.Println(paymentRef.String())
 
 }
