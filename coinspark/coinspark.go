@@ -3412,6 +3412,16 @@ func GetPackingOptions(previousRange *CoinSparkIORange, r *CoinSparkIORange, cou
 
 }
 
+func ScriptsToMetadata(scriptPubKeys []string, scriptsAreHex bool) []byte {
+	for _, scriptPubKey := range scriptPubKeys {
+		if !ScriptIsRegular(scriptPubKey, scriptsAreHex) {
+			return ScriptToMetadata(scriptPubKey, scriptsAreHex)
+		}
+	}
+	return nil
+}
+
+
 func ScriptToMetadata(scriptPubKey string, scriptIsHex bool) []byte {
 	scriptPubKeyRaw := GetRawScript(scriptPubKey, scriptIsHex)
 	scriptPubKeyRawLen := len(scriptPubKeyRaw)
