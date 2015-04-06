@@ -321,6 +321,39 @@ func CoinSparkPaymentRefTransfersEncode(paymentRef coinspark.CoinSparkPaymentRef
 	return coinspark.MetadataAppend(metadata, metadataMaxLen, appendMetaData)
 }
 
+func CreateAssetRef() coinspark.CoinSparkAssetRef {
+	fmt.Println("\nFormatting an asset reference for users...\n")
+
+	assetRef := coinspark.CoinSparkAssetRef{}
+
+	assetRef.BlockNum = 456789
+	assetRef.TxOffset = 65432
+	assetRef.TxIDPrefix = [2]byte{0xa0, 0x5b}
+
+	fmt.Println("Asset reference: ", assetRef.String())
+
+	return assetRef
+}
+
+func readAssetRef() coinspark.CoinSparkAssetRef {
+	fmt.Println("\nReading a user-provided asset reference...\n")
+
+	assetRef := coinspark.CoinSparkAssetRef{}
+
+	if assetRef.Decode("456789-65432-23456") {
+		fmt.Println("Block number: ", assetRef.BlockNum)
+		fmt.Println("Byte offset: ", assetRef.TxOffset)
+		fmt.Println("TxID prefix: ", fmt.Sprintf("%02X%02X", assetRef.TxIDPrefix[0], assetRef.TxIDPrefix[1]))
+
+		fmt.Printf(assetRef.String())
+
+	} else {
+		fmt.Println("Asset reference could not be read!")
+	}
+
+	return assetRef
+}
+
 func main() {
 	CreateCoinSparkAddress()
 	DecodeCoinSparkAddress()
@@ -348,4 +381,9 @@ func main() {
 
 	rawBinaryTransactions := [][]byte{EncodeMetaData(metadata), []byte{}, []byte{}, []byte{}, []byte{}}
 	ProcessTransactionRawBinary(rawBinaryTransactions, 3)
+
+	assetRef := CreateAssetRef()
+	fmt.Println(assetRef.String())
+
+	readAssetRef()
 }
