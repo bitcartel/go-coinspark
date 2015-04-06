@@ -409,6 +409,36 @@ func CalculateAssetHash() []byte {
 	return assetHash[:]
 }
 
+func CalculateMessageHash() []byte {
+	salt := make([]byte, 32)
+	rand.Read(salt)
+
+	contentParts := make([]coinspark.CoinSparkMessagePart, 2)
+
+	contentParts[0] = coinspark.CoinSparkMessagePart{}
+	contentParts[0].MimeType = "text/plain" // implies UTF-8 encoding
+	contentParts[0].FileName = ""
+	contentParts[0].Content = []byte("Payment for the attached invoice - Bob")
+
+	contentParts[1] = coinspark.CoinSparkMessagePart{}
+	// sample folder has a local file to include
+	contentParts[1].MimeType = "text/plain" // for PDF use application/pdf etc.
+	contentParts[1].FileName = "files/invoice.txt"
+	payload, err := ioutil.ReadFile(contentParts[1].FileName)
+	if err != nil {
+		fmt.Printf("%s\n", err)
+		return nil
+	}
+	contentParts[1].Content = payload
+
+	// ...
+
+	messageHash := coinspark.CoinSparkCalcMessageHash(salt, contentParts)
+	// The messageHash variable now contains the CoinSpark message hash
+
+	return messageHash
+}
+
 func main() {
 	CreateCoinSparkAddress()
 	DecodeCoinSparkAddress()
@@ -444,4 +474,7 @@ func main() {
 
 	assetHash := CalculateAssetHash()
 	fmt.Println("asset hash = ", hex.EncodeToString(assetHash))
+
+	messageHash := CalculateMessageHash()
+	fmt.Println("message hash = ", hex.EncodeToString(messageHash))
 }
