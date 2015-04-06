@@ -68,6 +68,44 @@ func DecodeCoinSparkAddress() {
 	}
 }
 
+func ProcessTransactionRawBinary(scriptPubKeys [][]byte, countInputs int) {
+	fmt.Println("\nExtracting CoinSpark metadata from a transaction...\n")
+
+	// scriptPubKeys is an array containing each output script of a transaction as raw binary data.
+	// The transaction has scriptPubKeys.length outputs and countInputs inputs.
+
+	numScriptPubKeys := len(scriptPubKeys)
+	scriptPubKeysStringArray := make([]string, numScriptPubKeys)
+	for i := 0; i < numScriptPubKeys; i++ {
+		scriptPubKeysStringArray[i] = string(scriptPubKeys[i])
+	}
+
+	metadata := coinspark.ScriptsToMetadata(scriptPubKeysStringArray, false)
+
+	if metadata != nil {
+		genesis := coinspark.CoinSparkGenesis{}
+		if genesis.Decode(metadata) {
+			fmt.Printf(genesis.String())
+		}
+
+		transferList := coinspark.CoinSparkTransferList{}
+		if transferList.Decode(metadata, countInputs, len(scriptPubKeys)) > 0 {
+			fmt.Printf(transferList.String())
+		}
+
+		paymentRef := coinspark.CoinSparkPaymentRef{}
+		if paymentRef.Decode(metadata) {
+			fmt.Printf(paymentRef.String())
+		}
+
+		message := coinspark.CoinSparkMessage{}
+		if message.Decode(metadata, len(scriptPubKeys)) {
+			fmt.Printf(message.String())
+		}
+	}
+
+}
+
 func ProcessTransaction(scriptPubKeys []string, countInputs int) {
 	fmt.Println("\nExtracting CoinSpark metadata from a transaction...\n")
 
@@ -98,6 +136,30 @@ func ProcessTransaction(scriptPubKeys []string, countInputs int) {
 			fmt.Printf(message.String())
 		}
 	}
+}
+
+func EncodeMetaData(metadata []byte) []byte {
+
+	fmt.Println("\nEncoding CoinSpark metadata in a script...\n")
+
+	// first get metadata from the encode() method of a CoinSparkGenesis, CoinSparkTransferList
+	// or CoinSparkPaymentRef object, or the CoinSparkBase.metadataAppend() method.
+
+	var scriptPubKey string
+
+	if metadata != nil {
+		scriptPubKey = coinspark.MetadataToScript(metadata, false)
+
+		if scriptPubKey != "" {
+			// now embed the raw bytes in $scriptPubKey directly in a transaction output
+		} else {
+			// handle the error
+		}
+	} else {
+		// handle the error
+	}
+
+	return []byte(scriptPubKey)
 }
 
 func EncodeMetaDataToHex(metadata []byte) string {
@@ -241,6 +303,24 @@ func CreatePaymentRef() coinspark.CoinSparkPaymentRef {
 	return paymentRef
 }
 
+func CoinSparkPaymentRefTransfersEncode(paymentRef coinspark.CoinSparkPaymentRef, transferList coinspark.CoinSparkTransferList, countInputs int, countOutputs int, metadataMaxLen int) []byte {
+
+	metadata := paymentRef.Encode(metadataMaxLen)
+	if metadata == nil {
+		return nil
+	}
+
+	appendMetadataMaxLen := coinspark.MetadataMaxAppendLen(metadata, metadataMaxLen)
+	// this is not simply metadataMaxLen-metadata.length since combining saves space
+
+	appendMetaData := transferList.Encode(countInputs, countOutputs, appendMetadataMaxLen)
+	if appendMetaData == nil {
+		return nil
+	}
+
+	return coinspark.MetadataAppend(metadata, metadataMaxLen, appendMetaData)
+}
+
 func main() {
 	CreateCoinSparkAddress()
 	DecodeCoinSparkAddress()
@@ -264,4 +344,8 @@ func main() {
 	paymentRef := CreatePaymentRef()
 	fmt.Println(paymentRef.String())
 
+	metadata := CoinSparkPaymentRefTransfersEncode(paymentRef, transferList, 3, 5, 40)
+
+	rawBinaryTransactions := [][]byte{EncodeMetaData(metadata), []byte{}, []byte{}, []byte{}, []byte{}}
+	ProcessTransactionRawBinary(rawBinaryTransactions, 3)
 }
