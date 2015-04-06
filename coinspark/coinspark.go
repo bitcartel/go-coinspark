@@ -1934,8 +1934,9 @@ func (p *CoinSparkPaymentRef) Match(other *CoinSparkPaymentRef) bool {
 	return p.Ref == other.Ref
 }
 
-func (p *CoinSparkPaymentRef) Randomize() *CoinSparkPaymentRef {
-	return NewRandomCoinSparkPaymentRef()
+func (p *CoinSparkPaymentRef) Randomize() {
+	rand.Seed(time.Now().UnixNano())
+	p.Ref = uint64(rand.Int63n(COINSPARK_PAYMENT_REF_MAX))
 }
 
 func NewRandomCoinSparkPaymentRef() *CoinSparkPaymentRef {
