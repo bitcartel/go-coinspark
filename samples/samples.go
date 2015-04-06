@@ -26,7 +26,7 @@ import (
 	//coinspark "../coinspark"
 	//"bufio"
 	//"bytes"
-	//"encoding/hex"
+	"encoding/hex"
 	"fmt"
 	//"bytes"
 	"crypto/rand"
@@ -34,6 +34,9 @@ import (
 	//"strconv"
 	//"strings"
 	//"math/rand"
+	"crypto/sha256"
+	"io/ioutil"
+	"net/http"
 )
 
 func CreateCoinSparkAddress() {
@@ -354,6 +357,58 @@ func readAssetRef() coinspark.CoinSparkAssetRef {
 	return assetRef
 }
 
+func GetContentsOfURL(urlString string) string {
+	response, err := http.Get(urlString)
+	if err != nil {
+		fmt.Printf("%s\n", err)
+		return ""
+	} else {
+		defer response.Body.Close()
+		contents, err := ioutil.ReadAll(response.Body)
+		if err != nil {
+			fmt.Printf("%s\n", err)
+			return ""
+		}
+		//fmt.Printf("%s\n", string(contents))
+		return string(contents)
+	}
+}
+
+func CalculateAssetHash() []byte {
+	name := "Credit at John Doe's"
+	issuer := "John Doe's Restaurant Chain"
+	description := "Can be used for any purchase at John Doe's, excluding breakfasts."
+	units := "1 US Dollar"
+	issueDate := "2014-03-01"
+	expiryDate := "2024-02-29"
+	interestRate := 0.0
+	multiple := 0.01
+	contractURL := "http://another-coin-site.com/coinspark/cloud-demo/coinspark-contract.pdf"
+
+	var contractContent []byte
+	contractContentString := GetContentsOfURL(contractURL)
+	if contractContentString != "" {
+		contractContent = []byte(contractContentString)
+	} else {
+		// handle error
+		return nil
+	}
+
+	fmt.Printf("Successfully downloaded contract at %s (length %d bytes)\n", contractURL, len(contractContent))
+
+	// assume we have some function like this that we can use
+
+	var assetHash [sha256.Size]byte
+
+	if contractContent != nil {
+		assetHash = coinspark.CoinSparkCalcAssetHash(name, issuer, description, units, issueDate, expiryDate, interestRate, multiple, contractContent)
+	} else {
+		// handle error
+	}
+
+	return assetHash[:]
+}
+
 func main() {
 	CreateCoinSparkAddress()
 	DecodeCoinSparkAddress()
@@ -386,4 +441,7 @@ func main() {
 	fmt.Println(assetRef.String())
 
 	readAssetRef()
+
+	assetHash := CalculateAssetHash()
+	fmt.Println("asset hash = ", hex.EncodeToString(assetHash))
 }
