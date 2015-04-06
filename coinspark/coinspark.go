@@ -137,8 +137,8 @@ type CoinSparkGenesis struct {
 	QtyMantissa        int16
 	QtyExponent        int16
 	ChargeFlatMantissa int16
-	ChargeBasisPoints  int16
-	chargeBasisPoints  int16 // one hundredths of a percent
+	ChargeFlatExponent int16
+	ChargeBasisPoints  int16 // one hundredths of a percent
 	UseHttps           bool
 	DomainName         string
 	UsePrefix          bool   // prefix coinspark/ in asset web page URL path
@@ -1268,8 +1268,8 @@ func (p *CoinSparkGenesis) Clear() {
 	p.QtyMantissa = 0
 	p.QtyExponent = 0
 	p.ChargeFlatMantissa = 0
+	p.ChargeFlatExponent = 0
 	p.ChargeBasisPoints = 0
-	p.chargeBasisPoints = 0
 	p.UseHttps = false
 	p.DomainName = "" //[0]=0x00
 	p.UsePrefix = true
@@ -1279,7 +1279,7 @@ func (p *CoinSparkGenesis) Clear() {
 }
 
 func (p *CoinSparkGenesis) GetChargeFlat() CoinSparkAssetQty {
-	x := MantissaExponentToQty(p.ChargeFlatMantissa, p.ChargeBasisPoints)
+	x := MantissaExponentToQty(p.ChargeFlatMantissa, p.ChargeFlatExponent)
 	return CoinSparkAssetQty(x)
 }
 
@@ -1290,7 +1290,7 @@ func (p *CoinSparkGenesis) SetChargeFlat(desiredChargeFlat CoinSparkAssetQty, ro
 		chargeFlatMantissa = COINSPARK_MIN16(chargeFlatMantissa, COINSPARK_GENESIS_CHARGE_FLAT_MANTISSA_MAX_IF_EXP_MAX)
 	}
 	p.ChargeFlatMantissa = chargeFlatMantissa
-	p.ChargeBasisPoints = chargeFlatExponent
+	p.ChargeFlatExponent = chargeFlatExponent
 	return p.GetChargeFlat()
 }
 
@@ -1318,7 +1318,7 @@ func (p *CoinSparkGenesis) String() string {
 	quantity = p.GetQty()
 	quantityEncoded = int((p.QtyExponent*COINSPARK_GENESIS_QTY_EXPONENT_MULTIPLE + p.QtyMantissa) & COINSPARK_GENESIS_QTY_MASK)
 	chargeFlat = p.GetChargeFlat()
-	chargeFlatEncoded = int(p.ChargeBasisPoints*COINSPARK_GENESIS_CHARGE_FLAT_EXPONENT_MULTIPLE + p.ChargeFlatMantissa)
+	chargeFlatEncoded = int(p.ChargeFlatExponent*COINSPARK_GENESIS_CHARGE_FLAT_EXPONENT_MULTIPLE + p.ChargeFlatMantissa)
 	domainPathMetadata := EncodeDomainAndOrPath(p.DomainName, p.UseHttps, p.PagePath, p.UsePrefix, false)
 
 	buffer.WriteString("COINSPARK GENESIS\n")
@@ -1328,10 +1328,10 @@ func (p *CoinSparkGenesis) String() string {
 	buffer.WriteString(fmt.Sprintf("    Quantity encoded: %d (small endian hex %s)\n", quantityEncoded, UnsignedToSmallEndianHex(int64(quantityEncoded), COINSPARK_GENESIS_QTY_FLAGS_LENGTH)))
 	buffer.WriteString(fmt.Sprintf("      Quantity value: %d\n", quantity))
 	buffer.WriteString(fmt.Sprintf("Flat charge mantissa: %d\n", p.ChargeFlatMantissa))
-	buffer.WriteString(fmt.Sprintf("Flat charge exponent: %d\n", p.ChargeBasisPoints))
+	buffer.WriteString(fmt.Sprintf("Flat charge exponent: %d\n", p.ChargeFlatExponent))
 	buffer.WriteString(fmt.Sprintf(" Flat charge encoded: %d (small endian hex %s)\n", chargeFlatEncoded, UnsignedToSmallEndianHex(int64(chargeFlatEncoded), COINSPARK_GENESIS_CHARGE_FLAT_LENGTH)))
 	buffer.WriteString(fmt.Sprintf("   Flat charge value: %d\n", chargeFlat))
-	buffer.WriteString(fmt.Sprintf(" Basis points charge: %d (hex %s)\n", p.chargeBasisPoints, UnsignedToSmallEndianHex(int64(p.chargeBasisPoints), COINSPARK_GENESIS_CHARGE_BPS_LENGTH)))
+	buffer.WriteString(fmt.Sprintf(" Basis points charge: %d (hex %s)\n", p.ChargeBasisPoints, UnsignedToSmallEndianHex(int64(p.ChargeBasisPoints), COINSPARK_GENESIS_CHARGE_BPS_LENGTH)))
 
 	httpMode := "http"
 	if p.UseHttps {
@@ -1367,7 +1367,7 @@ func (p *CoinSparkGenesis) IsValid() bool {
 		return false
 	}
 
-	if (p.ChargeBasisPoints < COINSPARK_GENESIS_CHARGE_FLAT_EXPONENT_MIN) || (p.ChargeBasisPoints > COINSPARK_GENESIS_CHARGE_FLAT_EXPONENT_MAX) {
+	if (p.ChargeFlatExponent < COINSPARK_GENESIS_CHARGE_FLAT_EXPONENT_MIN) || (p.ChargeFlatExponent > COINSPARK_GENESIS_CHARGE_FLAT_EXPONENT_MAX) {
 		return false
 	}
 
@@ -1376,7 +1376,7 @@ func (p *CoinSparkGenesis) IsValid() bool {
 	}
 
 	var tmp int16
-	if p.ChargeBasisPoints == COINSPARK_GENESIS_CHARGE_FLAT_EXPONENT_MAX {
+	if p.ChargeFlatExponent == COINSPARK_GENESIS_CHARGE_FLAT_EXPONENT_MAX {
 		tmp = COINSPARK_GENESIS_CHARGE_FLAT_MANTISSA_MAX_IF_EXP_MAX
 	} else {
 		tmp = COINSPARK_GENESIS_CHARGE_FLAT_MANTISSA_MAX
@@ -1385,7 +1385,7 @@ func (p *CoinSparkGenesis) IsValid() bool {
 		return false
 	}
 
-	if (p.chargeBasisPoints < COINSPARK_GENESIS_CHARGE_BASIS_POINTS_MIN) || (p.chargeBasisPoints > COINSPARK_GENESIS_CHARGE_BASIS_POINTS_MAX) {
+	if (p.ChargeBasisPoints < COINSPARK_GENESIS_CHARGE_BASIS_POINTS_MIN) || (p.ChargeBasisPoints > COINSPARK_GENESIS_CHARGE_BASIS_POINTS_MAX) {
 		return false
 	}
 
@@ -1412,12 +1412,12 @@ func (p *CoinSparkGenesis) Match(other *CoinSparkGenesis, strict bool) bool {
 	hashCompareLen = COINSPARK_MIN(hashCompareLen, COINSPARK_GENESIS_HASH_MAX_LEN)
 
 	if strict {
-		floatQuantitiesMatch = (p.QtyMantissa == other.QtyMantissa) && (p.QtyExponent == other.QtyExponent) && (p.ChargeFlatMantissa == other.ChargeFlatMantissa) && (p.ChargeBasisPoints == other.ChargeBasisPoints)
+		floatQuantitiesMatch = (p.QtyMantissa == other.QtyMantissa) && (p.QtyExponent == other.QtyExponent) && (p.ChargeFlatMantissa == other.ChargeFlatMantissa) && (p.ChargeFlatExponent == other.ChargeFlatExponent)
 	} else {
 		floatQuantitiesMatch = p.GetQty() == other.GetQty() && p.GetChargeFlat() == other.GetChargeFlat()
 	}
 
-	return (floatQuantitiesMatch && (p.chargeBasisPoints == other.chargeBasisPoints) && p.UseHttps == other.UseHttps && strings.ToLower(p.DomainName) == strings.ToLower(other.DomainName) && p.UsePrefix == other.UsePrefix && strings.ToLower(p.PagePath) == strings.ToLower(other.PagePath) && bytes.Equal(p.AssetHash[0:hashCompareLen], other.AssetHash[0:hashCompareLen]))
+	return (floatQuantitiesMatch && (p.ChargeBasisPoints == other.ChargeBasisPoints) && p.UseHttps == other.UseHttps && strings.ToLower(p.DomainName) == strings.ToLower(other.DomainName) && p.UsePrefix == other.UsePrefix && strings.ToLower(p.PagePath) == strings.ToLower(other.PagePath) && bytes.Equal(p.AssetHash[0:hashCompareLen], other.AssetHash[0:hashCompareLen]))
 
 }
 
@@ -1484,7 +1484,7 @@ func (p *CoinSparkGenesis) CalcAssetURL(firstSpentTxID string, firstSpentVout in
 }
 
 func (p *CoinSparkGenesis) CalcCharge(qtyGross CoinSparkAssetQty) CoinSparkAssetQty {
-	charge := p.GetChargeFlat() + ((qtyGross*CoinSparkAssetQty(p.chargeBasisPoints) + 5000) / 10000) // rounds to nearest
+	charge := p.GetChargeFlat() + ((qtyGross*CoinSparkAssetQty(p.ChargeBasisPoints) + 5000) / 10000) // rounds to nearest
 
 	return COINSPARK_MINASSETQTY(qtyGross, charge)
 }
@@ -1497,7 +1497,7 @@ func (p *CoinSparkGenesis) CalcHashLen(metadataMaxLen int) int {
 		assetHashLen -= COINSPARK_GENESIS_CHARGE_FLAT_LENGTH
 	}
 
-	if p.chargeBasisPoints > 0 {
+	if p.ChargeBasisPoints > 0 {
 		assetHashLen -= COINSPARK_GENESIS_CHARGE_BPS_LENGTH
 	}
 
@@ -1534,7 +1534,7 @@ func (p *CoinSparkGenesis) CalcGross(qtyNet CoinSparkAssetQty) CoinSparkAssetQty
 		return 0 // no point getting past charges if we end up with zero anyway
 	}
 
-	lowerGross = ((qtyNet + p.GetChargeFlat()) * 10000) / CoinSparkAssetQty(10000-p.chargeBasisPoints) // divides rounding down
+	lowerGross = ((qtyNet + p.GetChargeFlat()) * 10000) / CoinSparkAssetQty(10000-p.ChargeBasisPoints) // divides rounding down
 
 	var result CoinSparkAssetQty
 	if p.CalcNet(lowerGross) >= qtyNet {
@@ -1569,17 +1569,17 @@ func (p *CoinSparkGenesis) Decode(buffer []byte) bool {
 		metadata = metadata[COINSPARK_GENESIS_CHARGE_FLAT_LENGTH:]
 
 		p.ChargeFlatMantissa = int16(chargeEncoded % COINSPARK_GENESIS_CHARGE_FLAT_EXPONENT_MULTIPLE)
-		p.ChargeBasisPoints = int16(chargeEncoded / COINSPARK_GENESIS_CHARGE_FLAT_EXPONENT_MULTIPLE)
+		p.ChargeFlatExponent = int16(chargeEncoded / COINSPARK_GENESIS_CHARGE_FLAT_EXPONENT_MULTIPLE)
 	} else {
 		p.ChargeFlatMantissa = 0
-		p.ChargeBasisPoints = 0
+		p.ChargeFlatExponent = 0
 	}
 
 	if quantityEncoded&COINSPARK_GENESIS_FLAG_CHARGE_BPS > 0 {
-		p.chargeBasisPoints = int16(metadata[0])
+		p.ChargeBasisPoints = int16(metadata[0])
 		metadata = metadata[COINSPARK_GENESIS_CHARGE_BPS_LENGTH:]
 	} else {
-		p.chargeBasisPoints = 0
+		p.ChargeBasisPoints = 0
 	}
 
 	//  Domain name and page path
@@ -1622,7 +1622,7 @@ func (p *CoinSparkGenesis) Encode(metadataMaxLen int) (err error, metadata []byt
 	if p.ChargeFlatMantissa > 0 {
 		quantityEncoded |= COINSPARK_GENESIS_FLAG_CHARGE_FLAT
 	}
-	if p.chargeBasisPoints > 0 {
+	if p.ChargeBasisPoints > 0 {
 		quantityEncoded |= COINSPARK_GENESIS_FLAG_CHARGE_BPS
 	}
 
@@ -1635,7 +1635,7 @@ func (p *CoinSparkGenesis) Encode(metadataMaxLen int) (err error, metadata []byt
 	//  Charges - flat and basis points
 
 	if (quantityEncoded & COINSPARK_GENESIS_FLAG_CHARGE_FLAT) != 0 {
-		chargeEncoded := p.ChargeBasisPoints*COINSPARK_GENESIS_CHARGE_FLAT_EXPONENT_MULTIPLE + p.ChargeFlatMantissa
+		chargeEncoded := p.ChargeFlatExponent*COINSPARK_GENESIS_CHARGE_FLAT_EXPONENT_MULTIPLE + p.ChargeFlatMantissa
 
 		// COINSPARK_GENESIS_CHARGE_FLAT_LENGTH = 1
 		buf.WriteByte(uint8(chargeEncoded))
@@ -1643,7 +1643,7 @@ func (p *CoinSparkGenesis) Encode(metadataMaxLen int) (err error, metadata []byt
 
 	// COINSPARK_GENESIS_CHARGE_BPS_LENGTH = 1
 	if (quantityEncoded & COINSPARK_GENESIS_FLAG_CHARGE_BPS) != 0 {
-		buf.WriteByte(uint8(p.chargeBasisPoints))
+		buf.WriteByte(uint8(p.ChargeBasisPoints))
 	}
 
 	// Domain name and page path
@@ -3420,7 +3420,6 @@ func ScriptsToMetadata(scriptPubKeys []string, scriptsAreHex bool) []byte {
 	}
 	return nil
 }
-
 
 func ScriptToMetadata(scriptPubKey string, scriptIsHex bool) []byte {
 	scriptPubKeyRaw := GetRawScript(scriptPubKey, scriptIsHex)
